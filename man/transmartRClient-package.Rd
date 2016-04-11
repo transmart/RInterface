@@ -30,6 +30,8 @@ and high dimensional data (to which the user is authorized to access).
   \code{\link{getConcepts}}\cr
   \code{\link{getObservations}}\cr
   \code{\link{getHighdimData}}\cr
+  \code{\link{getPatientSetID}}\cr
+
 }
 }
 

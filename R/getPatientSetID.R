@@ -685,4 +685,3 @@ getPatientSetID <- function(study.name, patientset.constraints, returnXMLquery =
   }
   return(matching_indices)
 }  
-  

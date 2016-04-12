@@ -36,7 +36,14 @@ getPatientSetID <- function(study.name, patientset.constraints, returnXMLquery =
   patientset.constraints <- .checkPatientSetConstraints(patientset.constraints)
   
   message("Processing input...", "")
-  xmlQuery <- .buildXMLquery(patientset.constraints, study.name)
+  # retrieve concept information for the given study, and only keep relevant columns.  
+  # this will be used later to match the concepts supplied by the user as part of the constraint definition to concept 
+  # paths.
+  studyConcepts <- getConcepts(study.name)
+  studyConcepts <- studyConcepts[, c("name", "fullName", "type", "api.link.self.href")]
+  studyConcepts <- .findEndLeaves(studyConcepts)  
+  
+  xmlQuery <- .buildXMLquery(patientset.constraints, studyConcepts)
   
   # do POST request, and store result
   message("\nCreating patient set...", "")
@@ -82,13 +89,7 @@ getPatientSetID <- function(study.name, patientset.constraints, returnXMLquery =
 
 
 # parse the constraints, and turn it into a query in XML format
-.buildXMLquery <- function(patientset.constraints, study.name){
-  # retrieve concept information for the given study, and only keep relevant columns.  
-  # this will be used later to match the concepts supplied by the user as part of the constraint definition to concept 
-  # paths.
-  studyConcepts <- getConcepts(study.name)
-  studyConcepts <- studyConcepts[, c("name", "fullName", "type", "api.link.self.href")]
-  studyConcepts <- .findEndLeaves(studyConcepts)   
+.buildXMLquery <- function(patientset.constraints, studyConcepts){
   
   ## parse the expression containing the constraints and translate this into a query definition in XML format
   parsedConstraintsXMLlist <- .parsePatientSetConstraints(patientset.constraints, studyConcepts)

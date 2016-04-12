@@ -389,11 +389,11 @@ getPatientSetID <- function(study.name, patientset.constraints, returnXMLquery =
       stop(err_message)
     }
     if(length(tmpValue) >1){
-      tryCatch(stop(paste("Incorrect input for constraint_value in (sub)constraint: ", 
-                          .expressionToText(patientsetConstraints), ".\nObject length of \'", constraint$value ,
-                          "\' is larger than 1.", 
-                          "Only a single input value (string/number) is allowed as a constraint_value.", 
-                          "\nInput for constraint_value: ", sep = "") , call. = F), finally = print(tmpValue))
+      message("\nInput for constraint_value: ")
+      print(tmpValue)
+      stop(paste("Incorrect input for constraint_value in (sub)constraint: ", .expressionToText(patientsetConstraints), 
+                 ".\nObject length of \'", constraint$value , "\' is larger than 1.", 
+                 "Only a single input value (string/number) is allowed as a constraint_value."))
     }
     constraint$value <- tmpValue
   }

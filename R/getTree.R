@@ -72,6 +72,8 @@ getTree <- function(study, add_data = FALSE){
 
 showTree <- function(study_as_list, ...) {
   
+  addResourcePath('images', system.file('img', package='transmartRClient'))
+  
   app <- list(
     ui = fluidPage(
       sidebarLayout(
@@ -131,7 +133,7 @@ showTree <- function(study_as_list, ...) {
       
       # show tranSMART logo
       output$image <- renderImage({
-        return(list(src = "img/circle.png", contentType = "image/png", width = 300, height = 300, alt = getwd()))#alt = "tranSMART logo"))
+        return(list(src = system.file('img/circle.png', package='transmartRClient'), contentType = "image/png", width = 300, height = 300, alt = "tranSMART logo"))
       }, deleteFile = FALSE)
       
       output$tree <- renderTree({

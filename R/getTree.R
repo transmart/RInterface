@@ -33,7 +33,6 @@ getTree <- function(study, add_data = FALSE){
           
           if (isTRUE(add_data) && is.null(attr(study_as_list[[c(accum_path, current_node)]], "data_values"))){
             data_values <- as.numeric(getObservations(names(study_as_list), concept.links = api_link)$observations[,2])
-            print(data_values)
             attr(study_as_list[[c(accum_path, current_node)]], "data_values") <- data_values
           }
         } else if (concept_type == "CATEGORICAL_OPTION"){

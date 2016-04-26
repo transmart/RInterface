@@ -96,6 +96,7 @@ showTree <- function(study_as_list, ...) {
             }
             
             values <- attr(study_as_list[[c(ancestry, var)]], "data_values")
+            values <- values[!is.na(values)]
             sample_size <- length(values)
             
             # draw the histogram with the specified number of bins
@@ -103,6 +104,7 @@ showTree <- function(study_as_list, ...) {
               
               par(mar=c(2.1,4.1,4.1,2.1))
               bins <- seq(min(values), max(values), length.out = input$bins + 1)
+              if (min(bins) == max(bins)) bins <- 1
               main = paste(var, " (n = ", sample_size, ")", sep = "")
               
               args <- switch(input$dist,

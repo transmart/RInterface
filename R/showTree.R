@@ -1,7 +1,7 @@
 
 # Shows the tranSMART tree structure in shiny tree with clinical data visualizations
 showTree <- function(study_as_list, ...) {
-  
+
   app <- list(
     ui = fluidPage(
       sidebarLayout(
@@ -73,7 +73,7 @@ showTree <- function(study_as_list, ...) {
         if (is.null(tree)){
           "None"
         } else{
-          unlist(get_selected(tree))
+          .html_to_txt(unlist(get_selected(tree)))
         }
       })
       

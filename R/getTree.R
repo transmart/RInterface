@@ -1,7 +1,6 @@
 
 getTree <- function(study, add_data = FALSE){
   study_identifiers <- .getCorrrectStudyIdentifiers(study)
-    
   study_as_list <- list(structure(list(), stopened=TRUE, stselected=TRUE, "concept_type" = "Study"))
   concepts <- getConcepts(study_identifiers["study_id"])
   names(study_as_list) <- study_identifiers["study_name"]

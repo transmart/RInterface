@@ -43,7 +43,11 @@ getPatientSetID <- function(study.name, patientset.constraints, returnXMLquery =
   studyConcepts <- studyConcepts[, c("name", "fullName", "type", "api.link.self.href")]
   studyConcepts <- .findEndLeaves(studyConcepts)  
   
+  # read the constraints given by the user, and convert this to a XML query definition in the format as expected by REST-API
   xmlQuery <- .buildXMLquery(patientset.constraints, studyConcepts)
+  hrConstraints <- .makeHumanReadableQuery(xmlQuery)
+  xmlQuery <- saveXML(xmlQuery, prefix = '<?xml version="1.0" encoding="UTF-8"?>\n') #convert XML tree to string
+  if(getOption("verbose")) { message(xmlQuery) }
   
   # do POST request, and store result
   message("\nCreating patient set...", "")
@@ -52,8 +56,6 @@ getPatientSetID <- function(study.name, patientset.constraints, returnXMLquery =
   
   #return patient.set ID
   patientsetID <- serverResult$id
-  
-  hrConstraints <- .makeHumanReadableQuery(xmlQuery)
   
   result <- list(patientsetID = patientsetID, patientsetSize = serverResult$setSize, 
                  input_patientset.constraints = .expressionToText(patientset.constraints), 
@@ -108,12 +110,7 @@ getPatientSetID <- function(study.name, patientset.constraints, returnXMLquery =
   for(i in 1:length(parsedConstraintsXMLlist)){
     xmlQuery <- append.XMLNode(xmlQuery, parsedConstraintsXMLlist[[i]])
   }
-  
-  xmlQuery_asString <- saveXML(xmlQuery, prefix = '<?xml version="1.0" encoding="UTF-8"?>\n')
-  
-  if (getOption("verbose")) { message(xmlQuery_asString) }
-  
-  return(xmlQuery_asString)
+  return(xmlQuery)
 }
 
 
@@ -287,57 +284,53 @@ getPatientSetID <- function(study.name, patientset.constraints, returnXMLquery =
 
 
 .makeHumanReadableQuery <- function(xmlQuery){
+  
   parsedXML <- ""
-  xmlQuery <- strsplit(xmlQuery, "\n")[[1]]
-  panelCount <- 0
-  itemCount <- 0
-  invert <- "0"
-  for(i in 1:length(xmlQuery)){
-    oneLine <- xmlQuery[[i]]
+
+  if(all(names(xmlQuery)== "panel")){
+    panels <- xmlChildren(xmlQuery)
     
-    if(grepl("<panel>",oneLine)){ 
-      if(panelCount > 0 ){parsedXML <- paste(parsedXML, " & \n(", sep = "")
-      }else{parsedXML <- paste(parsedXML, "(", sep = "")}
-      panelCount <- panelCount + 1
-      itemCount <- 0
+    for(i in 1:length(panels)){
+      panel <- panels[[i]]
+      
+      if(i == 1){parsedXML <- paste(parsedXML, "(", sep = "") #first panel
+      }else{parsedXML <- paste(parsedXML, " & \n(", sep = "")}
+      
+      invert <- xmlValue(panel[["invert"]])
+      if(invert == "1"){parsedXML <- paste(parsedXML, "!(", sep = "") }
+      
+      #add the children
+      items <- xmlElementsByTagName(panel, "item")
+      for(j in 1:length(items)){
+        item <- items[[j]]
+        if(j > 1){parsedXML <- paste(parsedXML, " | ", sep = "")}
+        
+        #get concept path
+        item_key <- xmlValue(item[["item_key"]])
+        concept_path <- gsub("\\\\\\\\Public Studies", "", item_key)
+        concept_path <- gsub("\\\\\\\\Private Studies", "", concept_path)
+        parsedXML <- paste(parsedXML, "\"", concept_path, "\"", sep = "") 
+        
+        #if constraint operator and constraint value are given, get these
+        childNames <- names(item)
+        if(grepl("value_operator", childNames)){
+          valueOperator <- xmlValue(item[["value_operator"]])
+          parsedXML <- paste(parsedXML, " ", valueOperator, " ", sep = "") 
+        }
+        if(grepl("value_constraint",childNames)){
+          valueConstraint <- xmlValue(item[["value_constraint"]])
+          parsedXML <- paste(parsedXML, " ", valueConstraint, sep = "") 
+        } 
+      }
+      
+      #close brackets for panel
+      if(invert == "1"){parsedXML <- paste(parsedXML, "))", sep = "") 
+      }else{parsedXML <- paste(parsedXML, ")", sep = "") }
     }
-    if(grepl("<invert>", oneLine)){
-      invert <- .removeXMLmarkUp(oneLine, "invert")
-      invert <- gsub("[[:blank:]]", "",invert)
-      if(invert == "1"){ parsedXML <- paste(parsedXML, "!(", sep = "")}
-    }
-    if(grepl("</panel>",oneLine)){ 
-      if(invert == "1"){ parsedXML <- paste(parsedXML, "))", sep = "")
-      }else{parsedXML <- paste(parsedXML, ")", sep = "")}
-    }
-    if(grepl("<item>",oneLine)){ 
-      if(itemCount > 0 ){parsedXML <- paste(parsedXML, " | ", sep = "")}
-      itemCount <- itemCount + 1
-    }
-    if(grepl("<item_key>",oneLine)){
-      #get concept path
-      item_key <- .removeXMLmarkUp(oneLine, "item_key")
-      concept_path <- gsub("\\\\\\\\Public Studies", "", item_key)
-      concept_path <- gsub("\\\\\\\\Private Studies", "", concept_path)
-      parsedXML <- paste(parsedXML, "\"", concept_path, "\"", sep = "") 
-    } 
-    if(grepl("<value_operator>",oneLine)){
-      valueOperator <- .removeXMLmarkUp(oneLine, "value_operator")
-      parsedXML <- paste(parsedXML, " ", valueOperator, " ", sep = "") 
-    } 
-    if(grepl("<value_constraint>",oneLine)){
-      valueConstraint <- .removeXMLmarkUp(oneLine, "value_constraint")
-      parsedXML <- paste(parsedXML, " ", valueConstraint, " ", sep = "") 
-    } 
   }
+  if(parsedXML == ""){warning("Something went wrong with making a human readable version of the XML. 
+                              This does not affect the formation of the patient set")}
   return(parsedXML)
-}
-
-
-.removeXMLmarkUp <- function(string, markUpString){
-  string <- gsub(paste("^[[:blank:]]*<", markUpString,">", sep = ""), "", string)
-  string <- gsub(paste("</", markUpString,">", sep = ""), "", string)
-  return(string)
 }
 
 
@@ -554,10 +547,12 @@ getPatientSetID <- function(study.name, patientset.constraints, returnXMLquery =
       stop(err_message)
     }
     if(length(result) >1){
-      tryCatch(stop(paste("Incorrect input for concept specification in subconstraint: ", subconstraint,
+      write(paste("The content of object: \'", concept, "\' is:", sep = "" ),"")
+      print(result)
+      stop(paste("Incorrect input for concept specification in subconstraint: ", subconstraint,
                  ".\nObject length of \'", concept ,
                  "\' is larger than 1. Only a single string is allowed for specifying the concept.", 
-                 "\nInput for concept: ", sep = "") , call. = F), finally = print(result))
+                 "The content of this concept variable is printed above this error message.", sep = ""))
     }
     concept <- result
   }

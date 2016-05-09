@@ -264,15 +264,15 @@ function (oauthDomain = transmartClientEnv$transmartDomain, prefetched.request.t
 
 .serverMessageExchange <- 
 function(apiCall, httpHeaderFields, accept.type = "default", progress = .make.progresscallback.download(),
-         post.content.type = "", requestBody = "") {
+         post.content.type = NULL, requestBody = NULL) {
     if (any(accept.type == c("default", "hal"))) {
         if (accept.type == "hal") { httpHeaderFields <- c(httpHeaderFields, Accept = "application/hal+json;charset=UTF-8") }
         curlOptions <- list()
-        if (post.content.type != ""){ 
-          httpHeaderFields <- c(httpHeaderFields, 'content-type' = post.content.type)
-          if(requestBody == ""){ stop("Missing body for POST request")}
-          curlOptions[["postfields"]] <- requestBody
-          }
+        if (!is.null(post.content.type)) {
+            httpHeaderFields <- c(httpHeaderFields, 'content-type' = post.content.type)
+            if(is.null(requestBody)) { stop("Missing body for POST request") }
+            curlOptions[["postfields"]] <- requestBody
+        }
         headers <- basicHeaderGatherer()
         result <- list(JSON = FALSE)
         curlOptions <- c(curlOptions, list(httpheader = httpHeaderFields, headerfunction = headers$update))

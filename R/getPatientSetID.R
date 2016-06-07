@@ -30,12 +30,17 @@
 getPatientSetID <- function(study.name, patientset.constraints, returnXMLquery = F){
   if(missing(study.name)){stop("Provide study name")}
   if(missing(patientset.constraints)){stop("Provide patientset.constraints")}
-  
+  message("\nProcessing input...", "")
+
   # retrieve the expression that defines the constraints
-  if(!is.call(patientset.constraints)){patientset.constraints <- substitute(patientset.constraints)}
-  patientset.constraints <- .checkPatientSetConstraints(patientset.constraints)
+  patientset.constraints <- substitute(patientset.constraints) #needs to be like this, with possible later evaluation in 
+                                              # parsePatientsetConstraints because otherwise things such as "age"<65 & "biomarker data"
+                                            # will result in an error (problem is the string without operator) if you 
+                                            # try e.g. is.call or is.character on the input
+  # if constraints are supplied as string, try to parse the string
+  patientset.constraints <- .checkPatientSetConstraints(patientset.constraints) 
+ 
   
-  message("Processing input...", "")
   # retrieve concept information for the given study, and only keep relevant columns.  
   # this will be used later to match the concepts supplied by the user as part of the constraint definition to concept 
   # paths.
@@ -44,8 +49,8 @@ getPatientSetID <- function(study.name, patientset.constraints, returnXMLquery =
   studyConcepts <- .findEndLeaves(studyConcepts)  
   
   # read the constraints given by the user, and convert this to a XML query definition in the format as expected by REST-API
-  xmlQuery <- .buildXMLquery(patientset.constraints, studyConcepts)
-  hrConstraints <- .makeHumanReadableQuery(xmlQuery)
+  xmlQuery <- .buildXMLquery(patientset.constraints, studyConcepts, study.name)
+  hrConstraints <- .makeSummaryOfQuery(xmlQuery)
   xmlQuery <- saveXML(xmlQuery, prefix = '<?xml version="1.0" encoding="UTF-8"?>\n') #convert XML tree to string
   if(getOption("verbose")) { message(xmlQuery) }
   
@@ -61,7 +66,7 @@ getPatientSetID <- function(study.name, patientset.constraints, returnXMLquery =
                  input_patientset.constraints = .expressionToText(patientset.constraints), 
                  finalQueryConstraints = hrConstraints)
   
-  message(paste("\nBased on the input, the following constraints were defined and sent to the server:\n", 
+  message(paste("\nBased on the input, the following constraints were defined and sent to the server (always includes study concept):\n", 
               result$finalQueryConstraints, sep = ""), "")
   if(returnXMLquery){result[["xmlQuery"]] <- xmlQuery}
   return(result)
@@ -76,9 +81,13 @@ getPatientSetID <- function(study.name, patientset.constraints, returnXMLquery =
            The patient set constraints should be supplied in one single expression (or string).")}
     
     try({patientsetConstraintsParsed <- parse(text = patientsetConstraints)[[1]]
-      
+      if(length(patientsetConstraintsParsed) == 1){
+        if(is.character(patientsetConstraintsParsed)){ #e.g. happens if input string is "\"age\""
+          patientsetConstraints <- patientsetConstraintsParsed
+        }
+      }
       if(length(patientsetConstraintsParsed) > 1){
-        message(paste("Detecting a string as input for patient set constraints - expected is an expression,",  
+        message(paste("\nDetecting a string as input for patient set constraints - expected is an expression,",  
                 "such as: \"age\" > 65. \nWill attempt to parse the constraints out of the string, converting it",
                 "into an expression..."))
         patientsetConstraints <- patientsetConstraintsParsed
@@ -91,7 +100,7 @@ getPatientSetID <- function(study.name, patientset.constraints, returnXMLquery =
 
 
 # parse the constraints, and turn it into a query in XML format
-.buildXMLquery <- function(patientset.constraints, studyConcepts){
+.buildXMLquery <- function(patientset.constraints, studyConcepts, study.name){
   
   ## parse the expression containing the constraints and translate this into a query definition in XML format
   parsedConstraintsXMLlist <- .parsePatientSetConstraints(patientset.constraints, studyConcepts)
@@ -150,9 +159,11 @@ getPatientSetID <- function(study.name, patientset.constraints, returnXMLquery =
   return(conceptListStudy)
 }  
 
+
 # parsePatientSetConstraints takes an expression defining the constraints for the patientset and returns  
 # either a list of item XMLtrees or list of panel XMLtrees 
 .parsePatientSetConstraints <- function(patientsetConstraints, studyConcepts){
+ 
   relationalOperators <- c("<", ">", "<=",">=", "==", "!=")
   logicalOperators <- c("&","&&", "|", "||")
   allowedOperators <- c(relationalOperators, logicalOperators)
@@ -177,10 +188,20 @@ getPatientSetID <- function(study.name, patientset.constraints, returnXMLquery =
   # if length(patientsetConstraints) == 3, then the expression contains three elements, so it is either a low-level 
   # constraint of the form {concept}{constraint_operator}{constraint_value} or it is a concatenation of constraints
   # separated by either an AND or OR operator (of form {some constraint(s)}{ &, &&, | or || }{some constraint(s)} )
-  if(length(patientsetConstraints) == 3){
-    constraintOperator <- as.character(patientsetConstraints[[1]])
+  #  alternatively it is an expression containing the call to substitute() or an object with index, e.g. variable[1],  data.frame$firstColumn[firstRow],etc
+  # contain a string specifying a concept, or a string that in itself is a constraint definition, or an expression as 
+  # created with subsitute for specifying a constraint . 
+  
+  if(is.symbol(patientsetConstraints)){
+    firstElement_in_allowedOperators <- F
+  }else{
+    firstElement <-  as.character(patientsetConstraints[[1]])
+    firstElement_in_allowedOperators <- firstElement%in% allowedOperators
+  }
+
+  if(length(patientsetConstraints) == 3 & firstElement_in_allowedOperators){
+    constraintOperator <- firstElement
     
-    if(!constraintOperator%in% allowedOperators){stop(errorMsg)}
     constraint <- list()
     
     # in case where the (sub)constraint is a concatation of subconstraints, combined by an AND or OR operator 
@@ -201,8 +222,8 @@ getPatientSetID <- function(study.name, patientset.constraints, returnXMLquery =
       treeBeforeOperator <- .parsePatientSetConstraints(patientsetConstraints[[2]], studyConcepts)
       treeAfterOperator  <- .parsePatientSetConstraints(patientsetConstraints[[3]], studyConcepts)
       
-      #if there is an "OR" operation inbetween two subconstraints, the whole constraint cannot have an & anymore 
-      # (this is for forcing the strict format for constraint definition described above)
+      #if there is an "OR" operation inbetween two subconstraints, the combination of those two subconstraints cannot
+      # have an & anymore (this is for forcing the strict format for constraint definition described above)
       if(constraintOperator == "|" ) {
         if(grepl("&", .expressionToText(patientsetConstraints))){
           stop(paste("Wrong format of (sub)constraint definition. Found in (sub)constraint: ", 
@@ -211,7 +232,7 @@ getPatientSetID <- function(study.name, patientset.constraints, returnXMLquery =
                      "operator is on the highest level of the constraint definition \nand the | (or) operator on the ", 
                      "lowest (second) level, \nie. the format is 'x1' or (in case of multiple \'&\' operations) ", 
                      "'x1 & x2 & ...', \nwhere x1, x2, etc. can contain one or more subconstraints (called c here) ", 
-                     "separated by an | (or) operator, ie. x = c1 or x = c1 | c2 | ...,", 
+                     "separated by an | (or) operator, ie. x = c1 or x = (c1 | c2 | ...),", 
                      "\n where c is a single constraint such as \'\"age\" < 60\' or a reference to a concept.",
                      "\n Examples of valid constraints: c1, c1|c2, c1&c2&c3, (c1|c2)&c3&(c4|c5|c6)", sep = ""
           ))
@@ -245,12 +266,10 @@ getPatientSetID <- function(study.name, patientset.constraints, returnXMLquery =
     # element [[2]] contains the expression between the brackets, element [[1]] is '('
     xmlTreeList <- .parsePatientSetConstraints(patientsetConstraints[[2]], studyConcepts)
     return(xmlTreeList)
-  }else if(length(patientsetConstraints) == 1) { 
+  }else if(length(patientsetConstraints) == 1 & is.character(patientsetConstraints)) { 
     # Then the (sub)constraint should consist of only a specification of a concept. 
     # This will result in selection of all patients that have a value for this concept.
     # Concept specification can be a string containing a pattern to match to the concept name or a concept path or link, 
-    # or an object (variable) that contains such a string (only single string).
-    
     #retrieve concept path
     conceptPath <- .getConstraintConcept(patientsetConstraints, patientsetConstraints, studyConcepts, 
                                         identical.match = F, testIfEndLeave = F)[["conceptPath"]]
@@ -258,6 +277,51 @@ getPatientSetID <- function(study.name, patientset.constraints, returnXMLquery =
     # make itemTree for that concept
     itemXMLlist <- list(xmlNode("item", xmlNode("item_key", .makeItemKey(conceptPath))))
     return(itemXMLlist)
+  }else if(class(patientsetConstraints) == "name" | class(patientsetConstraints) == "call"){
+    #  alternatively it is an expression containing a call to substite or an object (with or without index), 
+    #    e.g. variables[1] or variable,  data.frame$firstColumn[firstRow],etc - this object can 
+    #  contain a string specifying a concept, or a string that in itself is a constraint definition, or an expression as 
+    #  created with subsitute for specifying a constraint . 
+    # e.g. when following input is given: concepts<- c("age", "sex");     getPatientSetID("Some study", concepts[1]) or
+    #      tmp <- c(substitute("age" <65), substitute("sex"== "female")); getPatientSetID("Some study", tmp[[1]])
+    # or an object with strings specifying the constraints, and then the strings shoudl be turned into expressions too.
+    #  tmp <- c("\"age\" <65", "\"sex\"== \"female\"");                  getPatientSetID("Some study", tmp[1]) 
+    # try to evaluate the expression and find a matching constraint concept
+    result <- try(eval(patientsetConstraints, envir = globalenv()), silent = T)
+    if(class(result) == "try-error"){
+      
+      stop(paste(attr(result, "condition")$message, "\n",errorMsg, sep = ""))
+    }
+    if(is.list(result))
+    {
+      if(length(result) > 1){
+        stop(paste("Incorrect input for patient set constraints.\n",
+                   "Evaluation of input", .expressionToText(patientsetConstraints), 
+                   "results in  a list with more than one element",
+                   "while the function expects only a single string or a single expression", 
+                   "(as created with function substitute), not multiple."))
+      }
+      if(length(result) == 1){ 
+        warning(paste("Evaluation of input", .expressionToText(patientsetConstraints), 
+                      "results in  a list with a single element.",
+                      "Expected is a string or an expression (as created with function substitute).",
+                      "Will try to use this single element in the list"))
+        result <- result[[1]]
+      }
+    }
+    if(length(result)==1)
+    {
+      if(is.na(result))
+      {
+        stop(paste("Content of \'",.expressionToText(patientsetConstraints), "\' is 'NA'.", 
+                   " Cannot use 'NA' as constraint definition/concept specification.", sep = ""))
+      }
+    }
+    result <- .checkPatientSetConstraints(result) #parses constraint definition out of string, if applicable
+    patientsetConstraints <- result
+    
+    xmlTreeList <- .parsePatientSetConstraints(patientsetConstraints, studyConcepts)
+    return(xmlTreeList)
   }else{
     stop(errorMsg)
   }
@@ -274,7 +338,7 @@ getPatientSetID <- function(study.name, patientset.constraints, returnXMLquery =
     textExpressionPasted <- paste(textExpressionPasted, collapse = "")
     
     #warnings are truncated, so it doesn't necessarily print all in case of long textExpression
-    message(paste("While trying to convert an expression to text, the deparse function cut an expression in two.", 
+    message(paste("\nWhile trying to convert an expression to text, the deparse function cut an expression in two.", 
                   "\nSeparate parts:\n", paste("\t", textExpression, collapse = "\n   AND \n"),
                   "\nThese are pasted again together. Result:\n    ", textExpressionPasted)) 
     textExpression <- textExpressionPasted
@@ -283,7 +347,7 @@ getPatientSetID <- function(study.name, patientset.constraints, returnXMLquery =
 }
 
 
-.makeHumanReadableQuery <- function(xmlQuery){
+.makeSummaryOfQuery <- function(xmlQuery){
   
   parsedXML <- ""
 
@@ -293,11 +357,11 @@ getPatientSetID <- function(study.name, patientset.constraints, returnXMLquery =
     for(i in 1:length(panels)){
       panel <- panels[[i]]
       
-      if(i == 1){parsedXML <- paste(parsedXML, "(", sep = "") #first panel
-      }else{parsedXML <- paste(parsedXML, " & \n(", sep = "")}
+      if(i == 1){parsedXML <- paste(parsedXML, "( ", sep = "") #first panel
+      }else{parsedXML <- paste(parsedXML, "\n\n\t&\n\n( ", sep = "")}
       
       invert <- xmlValue(panel[["invert"]])
-      if(invert == "1"){parsedXML <- paste(parsedXML, "!(", sep = "") }
+      if(invert == "1"){parsedXML <- paste(parsedXML, "!( ", sep = "") }
       
       #add the children
       items <- xmlElementsByTagName(panel, "item")
@@ -313,19 +377,19 @@ getPatientSetID <- function(study.name, patientset.constraints, returnXMLquery =
         
         #if constraint operator and constraint value are given, get these
         childNames <- names(item)
-        if(grepl("value_operator", childNames)){
-          valueOperator <- xmlValue(item[["value_operator"]])
+        if("constrain_by_value" %in% childNames){
+          valueConstraints <- item[["constrain_by_value"]]
+          valueOperator <- xmlValue(valueConstraints[["value_operator"]])
           parsedXML <- paste(parsedXML, " ", valueOperator, " ", sep = "") 
+          valueConstraint <- xmlValue(valueConstraints[["value_constraint"]])
+          parsedXML <- paste(parsedXML, " ", valueConstraint, " ", sep = "") 
+          
         }
-        if(grepl("value_constraint",childNames)){
-          valueConstraint <- xmlValue(item[["value_constraint"]])
-          parsedXML <- paste(parsedXML, " ", valueConstraint, sep = "") 
-        } 
       }
       
       #close brackets for panel
-      if(invert == "1"){parsedXML <- paste(parsedXML, "))", sep = "") 
-      }else{parsedXML <- paste(parsedXML, ")", sep = "") }
+      if(invert == "1"){parsedXML <- paste(parsedXML, " ))", sep = "") 
+      }else{parsedXML <- paste(parsedXML, " )", sep = "") }
     }
   }
   if(parsedXML == ""){warning("Something went wrong with making a human readable version of the XML. 
@@ -374,7 +438,7 @@ getPatientSetID <- function(study.name, patientset.constraints, returnXMLquery =
   constraint$concept <- patientsetConstraints[[2]]
   constraint$value   <- patientsetConstraints[[3]]
   
-  if(class(constraint$value) == "name"){
+  if(class(constraint$value) == "name" | class(constraint$value) == "call"){
     tmpValue <- try(eval(constraint$value, envir = globalenv()), silent = T)
     if(class(tmpValue) == "try-error"){
       try_error <- attr(tmpValue, "condition")$message
@@ -388,6 +452,10 @@ getPatientSetID <- function(study.name, patientset.constraints, returnXMLquery =
       stop(paste("Incorrect input for constraint_value in (sub)constraint: ", .expressionToText(patientsetConstraints), 
                  ".\nObject length of \'", constraint$value , "\' is larger than 1.", 
                  "Only a single input value (string/number) is allowed as a constraint_value."))
+    }
+    if(is.na(tmpValue)){
+      stop(paste("Content of \'",.expressionToText(constraint$value), "\' is 'NA'.", 
+                 " A constraint value cannot be a missing value.", sep = ""))
     }
     constraint$value <- tmpValue
   }
@@ -471,9 +539,9 @@ getPatientSetID <- function(study.name, patientset.constraints, returnXMLquery =
     # you cannot apply relational operations to the high dimensional node
     stop(paste("Incorrect use of a high dimensional data node in (sub)constraint: ",
                .expressionToText(patientsetConstraints),".",
-               "\nYou can only use high dimensional nodes for defining patient sets by supplying the node name ", 
-               "alone (e.g. \"mRNA day1\"); you cannot apply a relational operation (such as \"mRNA day1 < 0\")", 
-               "to the node. \nIf you supply the high dimensional node name, ",
+               "\nHigh dimensional nodes can only be used for defining patient sets by supplying the node name ", 
+               "alone (e.g. \"mRNA day1\"); it is not possible to apply a relational operation (such as \"mRNA day1 < 0\")", 
+               " to the node. \nWhen a high dimensional node name is supplied, ",
                "all patients that have data for that high dimensional node will be selected.", sep = ""))
   }
   
@@ -539,7 +607,7 @@ getPatientSetID <- function(study.name, patientset.constraints, returnXMLquery =
   subconstraint <- .expressionToText(subconstraint)
   
   #if not string: get the value of the variable/object. Value should be one string.
-  if(class(concept) == "name"){
+  if(class(concept) == "name" | class(concept) == "call"){
     result <- try(eval(concept, envir = globalenv()), silent = T)
     if(class(result) == "try-error"){
       try_error <- attr(result, "condition")$message
@@ -547,13 +615,17 @@ getPatientSetID <- function(study.name, patientset.constraints, returnXMLquery =
       stop(err_message)
     }
     if(length(result) >1){
-      write(paste("The content of object: \'", concept, "\' is:", sep = "" ),"")
+      write(paste("The content of object: \'", .expressionToText(concept), "\' is:", sep = "" ),"")
       print(result)
       stop(paste("Incorrect input for concept specification in subconstraint: ", subconstraint,
-                 ".\nObject length of \'", concept ,
+                 ".\nObject length of \'", .expressionToText(concept),
                  "\' is larger than 1. Only a single string is allowed for specifying the concept.", 
-                 "The content of this concept variable is printed above this error message.", sep = ""))
+                 "The content of this variable is printed above this error message.", sep = ""))
     }
+    if(is.na(result)){
+      stop(paste("Content of \'",.expressionToText(concept), "\' is 'NA'.", 
+                 " Cannot use 'NA' as concept specification.", sep = ""))
+    }   
     concept <- result
   }
   #concept should be a string.
@@ -603,7 +675,7 @@ getPatientSetID <- function(study.name, patientset.constraints, returnXMLquery =
     }
     
     if(is.concept.link){
-      message("Detecting a concept.link. Will attempt to find matching concept path.")
+      message("\nDetecting a concept.link. Will attempt to find matching concept path.")
       conceptMatch <- grep(concept, studyConcepts$api.link.self.href) 
       if(length(conceptMatch) > 1){
         conceptMatch <- .selectMatch(concept = concept, matching_indices = conceptMatch, 
@@ -615,11 +687,11 @@ getPatientSetID <- function(study.name, patientset.constraints, returnXMLquery =
   identicalM <- ""
   if(identical.match){identicalM <- "identical(literal) "} 
   if(length(conceptMatch) == 0){
-    stop(paste("No ", identicalM, "match found for concept or categorical value \'", orig_concept, 
-               "\', found in subconstraint: ", subconstraint, 
+    stop(paste("No ", identicalM, "matching concept or categorical value found in this study for \'", 
+               orig_concept, "\', found in subconstraint: ", subconstraint, 
                "\nNote: The supplied concept in the constraint definition can be a full or partial ",
-               "match to the concept name (and can even contain regular expressions: pattern matching will be done as", 
-               " done for the grep function, ignoring case), or it can be a concept.link or a concept.path.", 
+               "match to the concept name, and can even contain regular expressions (pattern matching will be done as", 
+               " done in the grep function, ignoring case) or it can be a concept.link or a concept.path.", 
                "\nIn case of a categorical concept; the value part of the constraint has to be a literal match to one",
                " of the possible categorical values for that concept." , sep = "")) 
   }
@@ -628,18 +700,18 @@ getPatientSetID <- function(study.name, patientset.constraints, returnXMLquery =
   # If constraints are supplied in the form of {concept}{operator}{constraint_value}, the concept should be an end leave 
   # (ie. data node), either categorical or numerical, and if it's categorical it should be an end leave and not a 
   # categorical value. If only a concept is supplied as a constraint, it is possible to also use other concepts that 
-  # are not end leaves - in that case testIfEndLeave should be FALSE.
+  # are not end leaves, and high dimensional data nodes - in that case testIfEndLeave should be FALSE.
   is.endLeaf <- studyConcepts$endLeaf[conceptMatch] == "YES"
   
   if(!is.endLeaf & testIfEndLeave){
     stop(paste("The supplied concept \'", concept, "\' is not a data node (ie. not an end leaf of the transmart tree).",
-               "The supplied concept name/path/link must point to a single numerical, categorical or high dimensional",
+               "The supplied concept name/path/link must point to a single numerical or categorical",
                " data node (end leaf).", sep =  ""))
   }
     
   matched_concept = list(conceptPath = studyConcepts$fullName[conceptMatch], 
                          conceptType = studyConcepts$type[conceptMatch])
-  message(paste("Matched the concept \'", orig_concept, "\' in subconstraint \'", subconstraint,
+  message(paste("\nMatched the concept \'", orig_concept, "\' in subconstraint \'", subconstraint,
               "\'\n  to concept (full path): \'", matched_concept$conceptPath, "\'\n", sep = "") )
   return(matched_concept)
 }
@@ -656,10 +728,12 @@ getPatientSetID <- function(study.name, patientset.constraints, returnXMLquery =
                  "\nPlease use the concept path instead of the concept name to specify the concept.",
                  "(Hint: Concept paths can be found in the \'fullName\' column of the getConcepts() result).", sep = ""))
     }
-    message(paste("Multiple matching concepts found for the string \'", concept,"\'. One identical match was found: \'",
+    message(paste("\nMultiple matching concepts found for the string \'", concept,
+                  "\'. One identical match was found (ignoring case): \'",
                   concept_list[matching_indices], "\'.\nThis match is selected.", 
                   "\nFor more precise matching use full-length concept names, paths, or links,", 
-                  " and/or include beginning/end of string symbols (^/$) - see ?regexp", sep = ""))
+                  " and/or include beginning/end of string symbols (^/$) - see ?regexp.", 
+                  "Note: regexp can only be used for specifying concept names or links, not paths",sep = ""))
   }
   
   #if not literal match take the shortest match
@@ -667,7 +741,7 @@ getPatientSetID <- function(study.name, patientset.constraints, returnXMLquery =
     paths_tmp<- concept_list[matching_indices]
     shortest_match<- matching_indices[which.min(nchar(paths_tmp))]
     matching_indices<- shortest_match
-    message(paste("Multiple matching concepts found for the string \'", concept,"\', selecting shortest match: \'",
+    message(paste("\nMultiple matching concepts found for the string \'", concept,"\', selecting shortest match: \'",
                   paste(concept_list[shortest_match], collapse = ","), "\'.",
                   "\nFor more precise matching use full-length names or paths,", 
                   " and/or include beginning/end of string symbols (^/$) - see ?regexp", sep = ""))

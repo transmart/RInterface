@@ -126,13 +126,17 @@ haven't connected to the server yet, establish a connection using the \code{\lin
   
   ## create patient.set
   
+  #selecting all patients with a value for concept "age"
+  getPatientSetID("GSE8581", "age")
+
+  #selecting all patients with "age" < 65
   getPatientSetID("GSE8581", "age" < 65)
   
     #or:
     
   my_concepts <- c("Age", "Sex", "Lung Disease")
   constraint_value <- 65
-  getPatientSetID("GSE8581", my_concepts[[1]] < constraint_value)
+  getPatientSetID("GSE8581", my_concepts[1] < constraint_value)
   
   #multiple constraints can be combined:
   getPatientSetID("GSE8581", "Age" < 65 & "Sex" == "female" & ("Lung Disease" == "chronic obstructive pulmonary disease" | 

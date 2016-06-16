@@ -444,32 +444,110 @@ function(rawVector, .to.data.frame.converter=.as.data.frame.fast, progress=.make
 # or element setting this would lead to a large number of memory copies and a
 # quadratic runtime. To prevent that, this function implements a bare bones
 # expanding array, in which list appends are (amortized) constant time.
-.expandingList <- function(capacity = 10) {
-    buffer <- vector('list', capacity)
+.expandingList <- function(capacity = 10, mode='list') {
+    buffer <- vector(mode, capacity)
     names <- character(capacity)
-    length <- 0
+    size <- 0
 
-    double.size <- function() {
-        buffer <<- c(buffer, vector('list', capacity))
-        names <<- c(names, character(capacity))
-        capacity <<- capacity * 2
+    increase.capacity <- function(extra) {
+        buffer <<- c(buffer, vector(mode, extra))
+        names <<- c(names, character(extra))
+        capacity <<- capacity + extra
     }
 
     add <- function(name, val) {
-        if(length == capacity) {
-            double.size()
+        if(size == capacity) {
+            # double capacity
+            increase.capacity(capacity)
         }
 
-        length <<- length + 1
-        buffer[[length]] <<- val
-        names[length] <<- name
+        size <<- size + 1
+        buffer[[size]] <<- val
+        names[size] <<- name
+    }
+
+    extend <- function(vals) {
+        vallen = length(vals)
+        if(size+vallen > capacity) {
+            toadd = capacity
+            if(size+vallen > capacity+toadd) {
+                toadd = size+vallen-capacity
+            }
+            increase.capacity(toadd)
+        }
+
+        buffer[(size+1):(size+vallen)] <<- vals
+        names[(size+1):(size+vallen)] <<- names(vals)
+        size <<- size + vallen
+    }
+
+    clear <- function() {
+        buffer[0:size] <<- vector(mode, 1)
+        names[0:size] <<- ""
+        size <<- 0
     }
 
     as.list <- function() {
-        b <- buffer[0:length]
-        names(b) <- names[0:length]
+        b <- buffer[0:size]
+        names(b) <- names[0:size]
         return(b)
     }
+
+    as.vector <- as.list
+
+    environment()
+}
+
+# .expandingVector is almost the same as .expandingList. The differences are
+# that expandingVector does not handle names and handles arbitrary vector types.
+# expandingVector also has a clear() method. If any more variants are needed
+# expandingList and expandingVector should be factored into a single
+# configurable type.
+# This datastructure is not yet used, it will be used to process highdim data as
+# it comes in.
+w.expandingVector <- function(mode, capacity = 10) {
+    buffer <- vector(mode, capacity)
+    size <- 0
+
+    increase.capacity <- function(extra) {
+        buffer <<- c(buffer, vector(mode, extra))
+        capacity <<- capacity + extra
+    }
+
+    add <- function(val) {
+        if(size == capacity) {
+            # double capacity
+            increase.capacity(capacity)
+        }
+
+        size <<- size + 1
+        buffer[[size]] <<- val
+    }
+
+    extend <- function(vals) {
+        vallen = length(vals)
+        if(size+vallen > capacity) {
+            toadd = capacity
+            if(size+vallen > capacity+toadd) {
+                toadd = size+vallen-capacity
+            }
+            increase.capacity(toadd)
+        }
+
+        buffer[(size+1):(size+vallen)] <<- vals
+        size <<- size + vallen
+    }
+
+    clear <- function() {
+        size <<- 0
+    }
+
+    as.list <- function() {
+        b <- buffer[0:size]
+        return(b)
+    }
+
+    as.vector <- as.list
 
     environment()
 }

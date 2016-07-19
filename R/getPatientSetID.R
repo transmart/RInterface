@@ -56,7 +56,7 @@ getPatientSetID <- function(study.name, patientset.constraints, returnXMLquery =
   
   # do POST request, and store result
   message("\nCreating patient set...", "")
-  serverResult <- .transmartGetJSON("/patient_sets", requestBody = xmlQuery,  
+  serverResult <- .transmartGetJSON("/patient_sets", post.body = xmlQuery,
                                    post.content.type ="text/xml;charset=UTF-8", onlyContent = c(201))
   
   #return patient.set ID

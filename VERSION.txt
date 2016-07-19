@@ -1,0 +1,6 @@
+This repository is part of the tranSMART Foundation's release of 
+transmartApp and the accompanying projects.
+
+TRANSMART-VERSION: 16.2-SNAPSHOT
+
+See DESCRIPTION for the package's own version

@@ -25,9 +25,9 @@
 
 # Notes for first time installers:
 
-# The package transmartRClient depends on seven packages: RCurl, rjson, RProtoBuf, plyr, hash, reshape and XML.
+# The package transmartRClient depends on these packages: httr, jsonlite, RProtoBuf, plyr, hash, reshape and XML.
 # You can install them as follows:
-install.packages(pkgs=c("RCurl", "rjson", "RProtoBuf", "plyr", "hash", "reshape", "XML"))
+install.packages(pkgs=c("httr", "jsonlite", "RProtoBuf", "plyr", "hash", "reshape", "XML"))
 
 # RProtoBuf depends on the system protobuf headers. For Ubuntu you will need to
 # install the libprotoc-dev and libprotobuf-dev packages.

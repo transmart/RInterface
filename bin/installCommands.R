@@ -25,9 +25,9 @@
 
 # Notes for first time installers:
 
-# The package transmartRClient depends on five packages: RCurl, rjson, RProtoBuf, plyr, hash, reshape, shiny, devtools and XML.
+# The package transmartRClient depends on five packages: httr, rjson, RProtoBuf, plyr, hash, and reshape.
 # You can install them as follows:
-install.packages(pkgs=c("RCurl", "rjson", "RProtoBuf", "plyr", "hash", "reshape", "shiny", "XML", "devtools"))
+install.packages(pkgs=c("httr", "rjson", "RProtoBuf", "plyr", "hash", "reshape"))
 
 # RProtoBuf depends on the system protobuf headers. For Ubuntu you will need to
 # install the libprotoc-dev and libprotobuf-dev packages.
@@ -36,11 +36,6 @@ install.packages(pkgs=c("RCurl", "rjson", "RProtoBuf", "plyr", "hash", "reshape"
 # the R version installed via homebrew runs into a libl library error. Please
 # use the default R installed via the CRAN installer, which does not have this
 # issue
-
-# For using the tree showTree function, the shinyTree package is required. It can be
-# installed with the following commands:
-library("devtools")
-install_github("trestletech/shinyTree")
 
 # Now you can install the transmartRClient. First, point the following path to the location of your "transmartRClient"
 # directory, which is the parent directory of the directory where this installCommands.R file is located

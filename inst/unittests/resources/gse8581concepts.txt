@@ -1,0 +1,38 @@
+name	fullName	type	api.link.self.href	endLeaf
+Afro American	\Public Studies\GSE8581\Subjects\Ethnicity\Afro American\	CATEGORICAL_OPTION	/studies/gse8581/concepts/Subjects/Ethnicity/Afro%20American	NO
+Age (year)	\Public Studies\GSE8581\Subjects\Age (year)\	NUMERIC	/studies/gse8581/concepts/Subjects/Age%20%28year%29	YES
+Biomarker_Data	\Public Studies\GSE8581\MRNA\Biomarker_Data\	UNKNOWN	/studies/gse8581/concepts/MRNA/Biomarker_Data	NO
+carcinoid	\Public Studies\GSE8581\Endpoints\Diagnosis\carcinoid\	CATEGORICAL_OPTION	/studies/gse8581/concepts/Endpoints/Diagnosis/carcinoid	NO
+Caucasian	\Public Studies\GSE8581\Subjects\Ethnicity\Caucasian\	CATEGORICAL_OPTION	/studies/gse8581/concepts/Subjects/Ethnicity/Caucasian	NO
+chronic obstructive pulmonary disease	\Public Studies\GSE8581\Subjects\Lung Disease\chronic obstructive pulmonary disease\	CATEGORICAL_OPTION	/studies/gse8581/concepts/Subjects/Lung%20Disease/chronic%20obstructive%20pulmonary%20disease	NO
+control	\Public Studies\GSE8581\Subjects\Lung Disease\control\	CATEGORICAL_OPTION	/studies/gse8581/concepts/Subjects/Lung%20Disease/control	NO
+Diagnosis	\Public Studies\GSE8581\Endpoints\Diagnosis\	CATEGORICAL_NODE	/studies/gse8581/concepts/Endpoints/Diagnosis	YES
+emphysema	\Public Studies\GSE8581\Endpoints\Diagnosis\emphysema\	CATEGORICAL_OPTION	/studies/gse8581/concepts/Endpoints/Diagnosis/emphysema	NO
+Endpoints	\Public Studies\GSE8581\Endpoints\	UNKNOWN	/studies/gse8581/concepts/Endpoints	NO
+Ethnicity	\Public Studies\GSE8581\Subjects\Ethnicity\	CATEGORICAL_NODE	/studies/gse8581/concepts/Subjects/Ethnicity	YES
+female	\Public Studies\GSE8581\Subjects\Sex\female\	CATEGORICAL_OPTION	/studies/gse8581/concepts/Subjects/Sex/female	NO
+FEV1	\Public Studies\GSE8581\Endpoints\FEV1\	NUMERIC	/studies/gse8581/concepts/Endpoints/FEV1	YES
+Forced Expiratory Volume Ratio	\Public Studies\GSE8581\Endpoints\Forced Expiratory Volume Ratio\	NUMERIC	/studies/gse8581/concepts/Endpoints/Forced%20Expiratory%20Volume%20Ratio	YES
+giant bullae	\Public Studies\GSE8581\Endpoints\Diagnosis\giant bullae\	CATEGORICAL_OPTION	/studies/gse8581/concepts/Endpoints/Diagnosis/giant%20bullae	NO
+Giant Cell Tumor	\Public Studies\GSE8581\Endpoints\Diagnosis\Giant Cell Tumor\	CATEGORICAL_OPTION	/studies/gse8581/concepts/Endpoints/Diagnosis/Giant%20Cell%20Tumor	NO
+GPL570_BOGUS	\Public Studies\GSE8581\MRNA\Biomarker_Data\GPL570_BOGUS\	UNKNOWN	/studies/gse8581/concepts/MRNA/Biomarker_Data/GPL570_BOGUS	NO
+Height (inch)	\Public Studies\GSE8581\Subjects\Height (inch)\	NUMERIC	/studies/gse8581/concepts/Subjects/Height%20%28inch%29	YES
+hematoma	\Public Studies\GSE8581\Endpoints\Diagnosis\hematoma\	CATEGORICAL_OPTION	/studies/gse8581/concepts/Endpoints/Diagnosis/hematoma	NO
+Homo sapiens	\Public Studies\GSE8581\Subjects\Organism\Homo sapiens\	CATEGORICAL_OPTION	/studies/gse8581/concepts/Subjects/Organism/Homo%20sapiens	NO
+inflammation	\Public Studies\GSE8581\Endpoints\Diagnosis\inflammation\	CATEGORICAL_OPTION	/studies/gse8581/concepts/Endpoints/Diagnosis/inflammation	NO
+Lung	\Public Studies\GSE8581\MRNA\Biomarker_Data\GPL570_BOGUS\Lung\	HIGH_DIMENSIONAL	/studies/gse8581/concepts/MRNA/Biomarker_Data/GPL570_BOGUS/Lung	YES
+Lung Disease	\Public Studies\GSE8581\Subjects\Lung Disease\	CATEGORICAL_NODE	/studies/gse8581/concepts/Subjects/Lung%20Disease	YES
+lymphoma	\Public Studies\GSE8581\Endpoints\Diagnosis\lymphoma\	CATEGORICAL_OPTION	/studies/gse8581/concepts/Endpoints/Diagnosis/lymphoma	NO
+male	\Public Studies\GSE8581\Subjects\Sex\male\	CATEGORICAL_OPTION	/studies/gse8581/concepts/Subjects/Sex/male	NO
+metastatic non-small cell adenocarcinoma	\Public Studies\GSE8581\Endpoints\Diagnosis\metastatic non-small cell adenocarcinoma\	CATEGORICAL_OPTION	/studies/gse8581/concepts/Endpoints/Diagnosis/metastatic%20non-small%20cell%20adenocarcinoma	NO
+metastatic renal cell carcinoma	\Public Studies\GSE8581\Endpoints\Diagnosis\metastatic renal cell carcinoma\	CATEGORICAL_OPTION	/studies/gse8581/concepts/Endpoints/Diagnosis/metastatic%20renal%20cell%20carcinoma	NO
+MRNA	\Public Studies\GSE8581\MRNA\	UNKNOWN	/studies/gse8581/concepts/MRNA	NO
+no malignancy	\Public Studies\GSE8581\Endpoints\Diagnosis\no malignancy\	CATEGORICAL_OPTION	/studies/gse8581/concepts/Endpoints/Diagnosis/no%20malignancy	NO
+non-small cell adenocarcinoma	\Public Studies\GSE8581\Endpoints\Diagnosis\non-small cell adenocarcinoma\	CATEGORICAL_OPTION	/studies/gse8581/concepts/Endpoints/Diagnosis/non-small%20cell%20adenocarcinoma	NO
+non-small cell squamous cell carcinoma	\Public Studies\GSE8581\Endpoints\Diagnosis\non-small cell squamous cell carcinoma\	CATEGORICAL_OPTION	/studies/gse8581/concepts/Endpoints/Diagnosis/non-small%20cell%20squamous%20cell%20carcinoma	NO
+not specified	\Public Studies\GSE8581\Subjects\Lung Disease\not specified\	CATEGORICAL_OPTION	/studies/gse8581/concepts/Subjects/Lung%20Disease/not%20specified	NO
+NSC-Mixed	\Public Studies\GSE8581\Endpoints\Diagnosis\NSC-Mixed\	CATEGORICAL_OPTION	/studies/gse8581/concepts/Endpoints/Diagnosis/NSC-Mixed	NO
+Organism	\Public Studies\GSE8581\Subjects\Organism\	CATEGORICAL_NODE	/studies/gse8581/concepts/Subjects/Organism	YES
+Sex	\Public Studies\GSE8581\Subjects\Sex\	CATEGORICAL_NODE	/studies/gse8581/concepts/Subjects/Sex	YES
+Subjects	\Public Studies\GSE8581\Subjects\	UNKNOWN	/studies/gse8581/concepts/Subjects	NO
+Unknown	\Public Studies\GSE8581\Endpoints\Diagnosis\Unknown\	CATEGORICAL_OPTION	/studies/gse8581/concepts/Endpoints/Diagnosis/Unknown	NO

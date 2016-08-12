@@ -31,7 +31,7 @@ getObservations(study.name, concept.match = NULL, concept.links = NULL, as.data.
 \references{}
 \author{Tim Dorscheidt, Jan Kanis, Rianne Jansen. Contact: development@thehyve.nl}
 \note{To be able to access a transmart database, you need to be connected to the server the database is on. If you haven't connected to the server yet, establish a connection using the \code{\link{connectToTransmart}} function.}
-\seealso{\code{\link{getStudies}, \link{getConcepts}}}
+\seealso{\code{\link{getStudies}, \link{getConcepts}, \link{getPatientSetID}}}
 \examples{
 \dontrun{
   # The following will retrieve a list with observations for the study "foo"

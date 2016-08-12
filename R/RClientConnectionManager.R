@@ -265,8 +265,14 @@ function (oauthDomain = transmartClientEnv$transmartDomain, prefetched.request.t
     return('unknown')
 }
 
+# Wrap this in case we need to change json libraries again
+.fromJSON <- function(json) {
+	fromJSON(json, simplifyDataFrame=F, simplifyMatrix=F)
+}
+
 .serverMessageExchange <- 
-function(apiCall, httpHeaderFields, accept.type = "default", post.body = NULL, show.progress = (accept.type == 'binary') ) {
+function(apiCall, httpHeaderFields, accept.type = "default", post.body = NULL, post.content.type = 'form',
+         show.progress = (accept.type == 'binary') ) {
     if (any(accept.type == c("default", "hal"))) {
         if (accept.type == "hal") {
             httpHeaderFields <- c(httpHeaderFields, Accept = "application/hal+json;charset=UTF-8")
@@ -283,7 +289,8 @@ function(apiCall, httpHeaderFields, accept.type = "default", post.body = NULL, s
                         body = post.body,
                         add_headers(httpHeaderFields),
                         authenticate(transmartClientEnv$client_id, transmartClientEnv$client_secret),
-                        encode='form',
+                        encode = if(post.content.type == 'form') 'form' else 'raw',
+                        if(post.content.type != 'form') content_type(post.content.type),
                         config(verbose = getOption("verbose")))
             if (getOption("verbose")) { message("POST body:\n", .list2string(post.body), "\n") }
         }
@@ -294,11 +301,11 @@ function(apiCall, httpHeaderFields, accept.type = "default", post.body = NULL, s
         result$statusMessage <- http_status(req)$message
     	switch(.contentType(result$headers),
                json = {
-                   result$content <- fromJSON(result$content)
+                   result$content <- .fromJSON(result$content)
                    result$JSON <- TRUE
                },
                hal = {
-                   result$content <- .simplifyHalList(fromJSON(result$content))
+                   result$content <- .simplifyHalList(.fromJSON(result$content))
                    result$JSON <- TRUE
                })
         return(result)
@@ -318,7 +325,8 @@ function(apiCall, httpHeaderFields, accept.type = "default", post.body = NULL, s
                         add_headers(httpHeaderFields),
                         authenticate(transmartClientEnv$client_id, transmartClientEnv$client_secret),
                         if(show.progress) progress(),
-                        encode='form',
+                        encode = if(post.content.type == 'form') 'form' else 'raw',
+                        if(post.content.type != 'form') content_type(post.content.type),
                         config(verbose = getOption("verbose")))
         }
         if(show.progress) cat("\nDownload complete.\n")

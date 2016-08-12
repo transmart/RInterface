@@ -23,6 +23,7 @@ The following functions are available in the package:
   \code{\link{getHighdimData}}\cr
   \code{\link{highdimInfo}}\cr
   \code{\link{getPatientSet}}\cr
+  \code{\link{getPatientSetID}}\cr
 }
 }
 

@@ -289,7 +289,7 @@ function(apiCall, httpHeaderFields, accept.type = "default", post.body = NULL, p
                         body = post.body,
                         add_headers(httpHeaderFields),
                         authenticate(transmartClientEnv$client_id, transmartClientEnv$client_secret),
-                        encode = if(post.content.type == 'form') 'form' else 'raw',
+                        encode = if(post.content.type == 'form') 'form' else NULL,
                         if(post.content.type != 'form') content_type(post.content.type),
                         config(verbose = getOption("verbose")))
             if (getOption("verbose")) { message("POST body:\n", .list2string(post.body), "\n") }

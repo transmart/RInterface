@@ -26,17 +26,18 @@
 # Patient.set constraints are provided as an expression in the shape of, for example,
 # (c1 | c2) & (c3|c4|c5) & c6 &... where c is either a constraint built up as {concept}{operator}{constraint_value} 
 # (e.g. "age" < 60) or a reference to a concept (e.g. "age")
-getPatientSetID <- function(study.name, patientset.constraints, returnXMLquery = F){
+createPatientSet <- function(study.name, patientset.constraints, returnXMLquery = F){
     if(missing(study.name)){stop("Provide study name")}
     if(missing(patientset.constraints)){stop("Provide patientset.constraints")}
     message("\nProcessing input...", "")
     
     # retrieve the expression that defines the constraints
-    patientset.constraints <- substitute(patientset.constraints) #needs to be like this, with possible later evaluation in
-                                                # parsePatientsetConstraints because otherwise things such as "age"<65 & "biomarker data"
-                                                # will result in an error (problem is the string without operator) if you 
-                                                # try e.g. is.call or is.character on the input
-                                                # if constraints are supplied as string, try to parse the string
+    patientset.constraints <- substitute(patientset.constraints) #needs to be like this, with possible later evaluation 
+                                                # in parsePatientsetConstraints because otherwise things such as 
+                                                #"age"<65 & "biomarker data" will result in an error (problem is the 
+                                                # string without operator) if you try e.g. is.call or is.character
+                                                # on the input if constraints are supplied as string, try to parse 
+                                                # the string
     patientset.constraints <- .checkPatientSetConstraints(patientset.constraints) 
     
     
@@ -65,8 +66,8 @@ getPatientSetID <- function(study.name, patientset.constraints, returnXMLquery =
                    input_patientset.constraints = .expressionToText(patientset.constraints), 
                    finalQueryConstraints = hrConstraints)
     
-    message(paste("\nBased on the input, the following constraints were defined and sent to the server (always includes study concept):\n", 
-                  result$finalQueryConstraints, sep = ""), "")
+    message(paste("\nBased on the input, the following constraints were defined and sent to the server", 
+                  " (always includes study concept):\n", result$finalQueryConstraints, sep = ""), "")
     if(returnXMLquery){result[["xmlQuery"]] <- xmlQuery}
     return(result)
 }
@@ -87,7 +88,8 @@ getPatientSetID <- function(study.name, patientset.constraints, returnXMLquery =
              }
              if(length(patientsetConstraintsParsed) > 1){
                  message(paste("\nDetecting a string as input for patient set constraints - expected is an expression,",  
-                               "such as: \"age\" > 65. \nWill attempt to parse the constraints out of the string, converting it",
+                               "such as: \"age\" > 65.",
+                               "\nWill attempt to parse the constraints out of the string, converting it",
                                "into an expression..."))
                  patientsetConstraints <- patientsetConstraintsParsed
              }
@@ -187,9 +189,9 @@ getPatientSetID <- function(study.name, patientset.constraints, returnXMLquery =
     # if length(patientsetConstraints) == 3, then the expression contains three elements, so it is either a low-level 
     # constraint of the form {concept}{constraint_operator}{constraint_value} or it is a concatenation of constraints
     # separated by either an AND or OR operator (of form {some constraint(s)}{ &, &&, | or || }{some constraint(s)} )
-    #  alternatively it is an expression containing the call to substitute() or an object with index, e.g. variable[1],  data.frame$firstColumn[firstRow],etc
-    # contain a string specifying a concept, or a string that in itself is a constraint definition, or an expression as 
-    # created with subsitute for specifying a constraint . 
+    #  alternatively it is an expression containing the call to substitute() or an object with index, e.g. variable[1],  
+    # data.frame$firstColumn[firstRow],etc
+    
     
     if(is.symbol(patientsetConstraints)){
         firstElement_in_allowedOperators <- F
@@ -215,14 +217,14 @@ getPatientSetID <- function(study.name, patientset.constraints, returnXMLquery =
             return(itemXMLlist)
         }else{
             # it's a concatenation of constraints: call function again on the subconstraints.
-            # right now it only supports the format where the & operators are always the highest level operators and the | 
-            # operators are only used as lowest level, forcing the format: (c1|c2)&c3&(c4|c5|c6|...)& ...
+            # right now it only supports the format where the & operators are always the highest level operators and the 
+            # | operators are only used as lowest level, forcing the format: (c1|c2)&c3&(c4|c5|c6|...)& ...
             
             treeBeforeOperator <- .parsePatientSetConstraints(patientsetConstraints[[2]], studyConcepts)
             treeAfterOperator  <- .parsePatientSetConstraints(patientsetConstraints[[3]], studyConcepts)
             
-            #if there is an "OR" operation inbetween two subconstraints, the combination of those two subconstraints cannot
-            # have an & anymore (this is for forcing the strict format for constraint definition described above)
+            # if there is an "OR" operation inbetween two subconstraints, the combination of those two subconstraints 
+            # cannot have an & anymore (this is for forcing the strict format for constraint definition described above)
             if(constraintOperator == "|" ) {
                 if(grepl("&", .expressionToText(patientsetConstraints))){
                     stop(paste("Wrong format of (sub)constraint definition. Found in (sub)constraint: ", 
@@ -279,12 +281,12 @@ getPatientSetID <- function(study.name, patientset.constraints, returnXMLquery =
     }else if(class(patientsetConstraints) == "name" | class(patientsetConstraints) == "call"){
         #  alternatively it is an expression containing a call to substite or an object (with or without index), 
         #    e.g. variables[1] or variable,  data.frame$firstColumn[firstRow],etc - this object can 
-        #  contain a string specifying a concept, or a string that in itself is a constraint definition, or an expression as 
-        #  created with subsitute for specifying a constraint . 
-        # e.g. when following input is given: concepts<- c("age", "sex");     getPatientSetID("Some study", concepts[1]) or
-        #      tmp <- c(substitute("age" <65), substitute("sex"== "female")); getPatientSetID("Some study", tmp[[1]])
+        #  contain a string specifying a concept, or a string that in itself is a constraint definition, or an  
+        #  expression as created with subsitute for specifying a constraint . 
+        # e.g. when following input is given: concepts<- c("age", "sex");     createPatientSet("Some study", concepts[1]) or
+        #      tmp <- c(substitute("age" <65), substitute("sex"== "female")); createPatientSet("Some study", tmp[[1]])
         # or an object with strings specifying the constraints, and then the strings shoudl be turned into expressions too.
-        #  tmp <- c("\"age\" <65", "\"sex\"== \"female\"");                  getPatientSetID("Some study", tmp[1]) 
+        #  tmp <- c("\"age\" <65", "\"sex\"== \"female\"");                  createPatientSet("Some study", tmp[1]) 
         # try to evaluate the expression and find a matching constraint concept
         result <- try(eval(patientsetConstraints, envir = globalenv()), silent = T)
         if(class(result) == "try-error"){

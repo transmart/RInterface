@@ -31,7 +31,8 @@ gseconcepts <- read.table(gse8581conceptsLocation, header = T, stringsAsFactors 
 ### unit tests for function .checkPatientSetConstraints ###
 # this should convert a string to an expression, if the constraints are
 # provided as a string. Also checks that it only contains one string
-#both "\"age\"" and "age" as input should result in returning  "age" # suggest to use variable name without the quotes if variable with name age should be used
+# both "\"age\"" and "age" as input should result in returning  "age" # suggest to use variable name without the quotes 
+# if variable with name age should be used
 test.checkPatientSetConstraints.simpleString.1 <- function() {
   result<- transmartRClient:::.checkPatientSetConstraints("\"age\"")
   checkEquals("age", result)
@@ -197,7 +198,7 @@ test.buildXMLquery.simpleConstraintContainingObjects<- function() {
   checkIdentical(expected, xmlQueryText)
 }
 
-#constraints with double substitute (in getPatientSetID another substitute is performed on the input, so if input is 
+#constraints with double substitute (in createPatientSet another substitute is performed on the input, so if input is 
 # substitute("age"<65), then input for buildXMLquery is substitute(substitute("age"<65))
 test.buildXMLquery.doubleSubstitute<- function() {
   concepts <- c("age", "sex")
@@ -258,34 +259,34 @@ test.buildXMLquery.objectWithSubstitute<- function() {
 
 
 #may also be useful for testing (need to connect to a database that has both the clinical and high dim data of gse8581):
-# getPatientSetID("GSE8581", "Age") #works on transmart-dev.
-# getPatientSetID("GSE8581", "Subjects") #works on transmart-dev.
-# getPatientSetID("GSE8581", "control") #works on transmart-dev.
-# getPatientSetID("GSE8581", "Nonsense") #isn't supposed to work
-# getPatientSetID("GSE8581", "/studies/gse8581/concepts/Subjects/Age%20%28year%29") #works on transmart-dev
-# getPatientSetID("GSE8581", "/studies/gse8581/concepts/Subjects/Age%20%28year%29") #works on transmart-dev
-# getPatientSetID("GSE8581", "age" < 65) #works on transmart-dev.
-# getPatientSetID("GSE8581", "sex" == "unknown") #isn't supposed to work
-# getPatientSetID("GSE8581", "lung" < 65) #isn't supposed to work
-# getPatientSetID("GSE8581", "Subjects" < 65) #isn't supposed to work
-# getPatientSetID("GSE8581", "age" < 65 | "sex" == "female") #works on transmart-dev.
-# getPatientSetID("GSE8581", "age" < 65 & "sex" == "female") #works on transmart-dev.
-# getPatientSetID("GSE8581", "age" < 65 & ("lung disease" == "control" | "lung disease" == "chronic obstructive pulmonary disease") & "Biomarker_Data") 
-# getPatientSetID("GSE8581","sex"== "female" | ("age" < 65 & "Biomarker_Data")) 
-# getPatientSetID("GSE8581","sex"== "female" & "age" < 65 | "Biomarker_Data") 
+# createPatientSet("GSE8581", "Age") #works on transmart-dev.
+# createPatientSet("GSE8581", "Subjects") #works on transmart-dev.
+# createPatientSet("GSE8581", "control") #works on transmart-dev.
+# createPatientSet("GSE8581", "Nonsense") #isn't supposed to work
+# createPatientSet("GSE8581", "/studies/gse8581/concepts/Subjects/Age%20%28year%29") #works on transmart-dev
+# createPatientSet("GSE8581", "/studies/gse8581/concepts/Subjects/Age%20%28year%29") #works on transmart-dev
+# createPatientSet("GSE8581", "age" < 65) #works on transmart-dev.
+# createPatientSet("GSE8581", "sex" == "unknown") #isn't supposed to work
+# createPatientSet("GSE8581", "lung" < 65) #isn't supposed to work
+# createPatientSet("GSE8581", "Subjects" < 65) #isn't supposed to work
+# createPatientSet("GSE8581", "age" < 65 | "sex" == "female") #works on transmart-dev.
+# createPatientSet("GSE8581", "age" < 65 & "sex" == "female") #works on transmart-dev.
+# createPatientSet("GSE8581", "age" < 65 & ("lung disease" == "control" | "lung disease" == "chronic obstructive pulmonary disease") & "Biomarker_Data") 
+# createPatientSet("GSE8581","sex"== "female" | ("age" < 65 & "Biomarker_Data")) 
+# createPatientSet("GSE8581","sex"== "female" & "age" < 65 | "Biomarker_Data") 
 # concepts <- c("age", "sex")
-# getPatientSetID("GSE8581", concepts[1] < some_value) #works on transmart-dev.
-# getPatientSetID("GSE8581", substitute(concepts[1] < some_value[1])) #works on transmart-dev.
+# createPatientSet("GSE8581", concepts[1] < some_value) #works on transmart-dev.
+# createPatientSet("GSE8581", substitute(concepts[1] < some_value[1])) #works on transmart-dev.
 # constraint <- "concepts[1] < 65"
-# getPatientSetID("GSE8581",constraint[1]) #works on transmart-dev.
+# createPatientSet("GSE8581",constraint[1]) #works on transmart-dev.
 # constraint <- "age"
-# getPatientSetID("GSE8581",constraint) #works on transmart-dev.
+# createPatientSet("GSE8581",constraint) #works on transmart-dev.
 # constraints <- "age"
-# getPatientSetID("GSE8581",constraints[2]) #shouldn't work
-# getPatientSetID("GSE8581",constraints[2] < 65)  #shouldn't work
+# createPatientSet("GSE8581",constraints[2]) #shouldn't work
+# createPatientSet("GSE8581",constraints[2] < 65)  #shouldn't work
 # tmp <- c(substitute("age" <65), substitute("sex"== "female"))
-# getPatientSetID("GSE8581",tmp[1])  #works on transmart-dev
+# createPatientSet("GSE8581",tmp[1])  #works on transmart-dev
 # concepts <- c("age", "sex")
 # constraint <- "concepts[1] < 65"
-# getPatientSetID("gse8581", "concepts[1] < 65")
+# createPatientSet("gse8581", "concepts[1] < 65")
 

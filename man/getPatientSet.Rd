@@ -13,7 +13,7 @@ getPatientSet(id)
 \arguments{
   \item{id}{an integral number, the id of the patient set}
 \details{
-  The function will return a named list with properties of the patient set. Patient sets are created in the Transmart web interface or with the \code{\link{getPatientSetId}} call (still to be implemented). Currently there is no support in the legacy Transmart web interface to view the id of a patient set, but the new web app will support that.
+  The function will return a named list with properties of the patient set. Patient sets are created in the Transmart web interface or with the \code{\link{createPatientSet}} call (still to be implemented). Currently there is no support in the legacy Transmart web interface to view the id of a patient set, but the new web app will support that.
 }
 }
 \value{

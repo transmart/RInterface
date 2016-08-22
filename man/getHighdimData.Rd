@@ -91,7 +91,7 @@ If no projection is specified this function returns a list of the projections av
 \author{Tim Dorscheidt, Jan Kanis, Rianne Jansen.
 Contact: development@thehyve.nl}
 \note{To be able to access a transmart database, you need to be connected to the server the database is on. If you haven't connected to the server yet, establish a connection using the \code{\link{connectToTransmart}} function.}
-\seealso{\code{\link{hash}, \link{highdimInfo}, \link{getStudies}, \link{getConcepts}}, \link{getPatientSetID}.}
+\seealso{\code{\link{hash}, \link{highdimInfo}, \link{getStudies}, \link{getConcepts}}, \link{createPatientSet}.}
 
 \examples{
 \dontrun{

@@ -1,5 +1,5 @@
-\name{getPatientSetID}
-\alias{getPatientSetID}
+\name{createPatientSet}
+\alias{createPatientSet}
 
 \title{
 Define a patient set based on a series of constraints and retrieve the patient.set ID
@@ -14,7 +14,7 @@ called "finalQueryConstraints"). Optionally, the body of the POST request can be
 the query definition in XML format as it is sent to tranSMART.
 }
 \usage{
-getPatientSetID(study.name, patientset.constraints, returnXMLquery = FALSE)
+createPatientSet(study.name, patientset.constraints, returnXMLquery = FALSE)
 }
 
 \arguments{
@@ -55,10 +55,10 @@ Example:
 "sex"== "female" & ("age" > 65 | "blood_pressure" > 140) & ("diagnosis" == "diabetes" | "diagnosis" == "prediabetic")
 
   See also \code{\link{substitute}} for creating expressions in case you want to store the expressions in a variable 
-  before calling getPatientSetID. E.g. \code{getPatientSetID("SOME STUDY", "age" < 65)}, will have the same result as:  
-  \code{my_expression <- substitute("age" < 65) ; getPatientSetID("SOME STUDY", my_expression)}.  Alternatively, the 
-  constraints can also be given as a string (\code{getPatientSetID("SOME STUDY", "\"age\" < 65")} or 
-  \code{age_concept <- "age"; getPatientSetID("SOME STUDY", "age_concept < 65") }), but this might not be fully 
+  before calling createPatientSet. E.g. \code{createPatientSet("SOME STUDY", "age" < 65)}, will have the same result as:  
+  \code{my_expression <- substitute("age" < 65) ; createPatientSet("SOME STUDY", my_expression)}.  Alternatively, the 
+  constraints can also be given as a string (\code{createPatientSet("SOME STUDY", "\"age\" < 65")} or 
+  \code{age_concept <- "age"; createPatientSet("SOME STUDY", "age_concept < 65") }), but this might not be fully 
   supported. If the constraints are supplied as a single string, things that should be interpreted as text should be 
   quoted. This applies for example to concept names/paths/links and the categorical values (e.g. "\"sex\" == \"Male\""). 
   Else this will be interpreted as a variable name and the function will try to find a variable with that name in the 
@@ -127,36 +127,36 @@ haven't connected to the server yet, establish a connection using the \code{\lin
   ## create patient.set
   
   #selecting all patients with a value for concept "age"
-  getPatientSetID("GSE8581", "age")
+  createPatientSet("GSE8581", "age")
 
   #selecting all patients with "age" < 65
-  getPatientSetID("GSE8581", "age" < 65)
+  createPatientSet("GSE8581", "age" < 65)
   
     #or:
     
   my_concepts <- c("Age", "Sex", "Lung Disease")
   constraint_value <- 65
-  getPatientSetID("GSE8581", my_concepts[1] < constraint_value)
+  createPatientSet("GSE8581", my_concepts[1] < constraint_value)
   
   #multiple constraints can be combined:
-  getPatientSetID("GSE8581", "Age" < 65 & "Sex" == "female" & ("Lung Disease" == "chronic obstructive pulmonary disease" | 
+  createPatientSet("GSE8581", "Age" < 65 & "Sex" == "female" & ("Lung Disease" == "chronic obstructive pulmonary disease" | 
   "Lung Disease" == "control"))
   
   
   # there are multiple ways the patient.set constraints can be supplied. The following will have the same result:
   # 1 as expression
-  getPatientSetID("GSE8581", "age" < 65)
+  createPatientSet("GSE8581", "age" < 65)
   
   # 2 as an object (variable) containing a single expression
   my_expression <- substitute("age"< 65)
-  getPatientSetID("GSE8581", my_expression)
+  createPatientSet("GSE8581", my_expression)
   
   #3 as string. 
     # supplying concept name as string:
-  getPatientSetID("GSE8581", "\"age\" < 65")
+  createPatientSet("GSE8581", "\"age\" < 65")
    # or if concept name is stored in an object (variable):
   age_concept<- "age" 
-  getPatientSetID("GSE8581", "age_concept < 65")
+  createPatientSet("GSE8581", "age_concept < 65")
   
   }
 

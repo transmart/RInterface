@@ -48,7 +48,8 @@ The remaining parameters are constraints that limit the amount of data that is r
 Assay constraints:
 
   \item{trial.name}{A single character string with the trial name.}
-  \item{patient.set}{A number indicating the patient set.}
+  \item{patient.set}{A number indicating the patient set, as created with \code{\link{createPatientSet}}.
+  It can be used to retrieve only the data for the patients that belong to that specific patient.set}
   \item{ontology.term}{A single character string containing the concept path.}
   \item{assay.ids}{A numeric vector containing the id's of the assays you want to retrieve.}
   \item{patient.ids}{A character vector with the patient ids that you want to retrieve.}

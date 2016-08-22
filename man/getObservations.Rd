@@ -8,12 +8,14 @@
   study. A subset of observations can be selected by filtering by concept.
 }
 \usage{
-getObservations(study.name, concept.match = NULL, concept.links = NULL, as.data.frame = TRUE)
+getObservations(study.name, concept.match = NULL, concept.links = NULL, patient.set = NULL, as.data.frame = TRUE)
 }
 \arguments{
   \item{study.name}{a character string giving the name of a study.}
   \item{concept.match}{a character string or character vector containing the concept name(s) that should be matched. For each vector element, the \code{getObservations} function will search within the requested study for the first concept which name contains the given character string. It uses the name column of the result from \code{\link{getConcepts}} to perform the matching.}
   \item{concept.links}{ a character string or a character vector containing the link(s) pointing to the locations of the chosen concepts on the server. Candidate values for this argument can be found in the \code{api.link.self.href} column of the \code{\link{getConcepts}} results. It is the most exact way to refer to a concept, and it overwrites the \code{concept.match} argument.}
+  \item{patient.set}{ A number indicating the patient set, as created with \code{\link{createPatientSet}}.
+  It can be used to retrieve only the data for the patients that belong to that specific patient.set}
   \item{as.data.frame}{logical (default setting is TRUE): should the list containing the observation values be converted to a dataframe?}
 }
 \details{

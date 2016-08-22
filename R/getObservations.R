@@ -22,7 +22,8 @@
 # You should have received a copy of the GNU General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-getObservations <- function(study.name, concept.match = NULL, concept.links = NULL, as.data.frame = TRUE) {
+getObservations <- function(study.name, concept.match = NULL, concept.links = NULL, as.data.frame = TRUE, 
+                            patient.set = NULL) {
     .ensureTransmartConnection()
 
     if (is.null(concept.links)) {
@@ -50,10 +51,31 @@ getObservations <- function(study.name, concept.match = NULL, concept.links = NU
 
     listOfObservations <- list()
 
-    for (oneLink in concept.links) {
+    if(is.null(patient.set)){
+      for (oneLink in concept.links) {
         serverResult <- .transmartGetJSON(paste(oneLink, "/observations", sep = "")) 
         listOfObservations <- c(listOfObservations, serverResult$observations)
+      }
+    }else{
+      if(length(patient.set)>1){stop("Only one patient.set ID allowed as input")}
+      if(!is.numeric(patient.set)){stop("Patient.set ID should be a numeric value")}
+      
+      if(length(concept.links) == 1 & concept.links[1] == paste("/studies/", study.name, sep = "")){
+        tmpConceptPath<- studyConcepts$fullName[1]
+        fullConceptNames <- gsub(paste(study.name,"\\\\.*", sep = ""),paste(study.name, "\\\\", sep = ""), 
+                                 tmpConceptPath, ignore.case=T)
+      }else{ 
+        fullConceptNames<-studyConcepts$fullName[match(concept.links, studyConcepts$api.link.self.href)]
+        }
+      for (oneName in fullConceptNames) {
+        serverResult <- .transmartGetJSON(
+          paste("/observations?patient_sets=", patient.set, 
+                "&concept_paths=", URLencode(oneName), 
+                sep=""))
+        listOfObservations <- c(listOfObservations, serverResult$observations)
+      }
     }
+    
 
     if (as.data.frame) {
         dataFrameObservations <- .listToDataFrame(listOfObservations)

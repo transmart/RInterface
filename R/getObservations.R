@@ -40,7 +40,7 @@ getObservations <- function(study.name, concept.match = NULL, concept.links = NU
                 }
             }
         } else {
-            concept.links <- paste("/studies/", study.name, sep = "")
+            concept.links <- paste0("/studies/", study.name)
         }
     }
 
@@ -57,15 +57,15 @@ getObservations <- function(study.name, concept.match = NULL, concept.links = NU
         listOfObservations <- c(listOfObservations, serverResult$observations)
       }
     }else{
-      if(length(patient.set)>1){stop("Only one patient.set ID allowed as input")}
-      if(!is.numeric(patient.set)){stop("Patient.set ID should be a numeric value")}
+      if(length(patient.set) > 1) { stop("Only one patient.set ID allowed as input") }
+      if(!is.numeric(patient.set)) { stop("Patient.set ID should be a numeric value") }
       
-      if(length(concept.links) == 1 & concept.links[1] == paste("/studies/", study.name, sep = "")){
+      if(length(concept.links) == 1 && concept.links[1] == paste0("/studies/", study.name)) {
         tmpConceptPath<- studyConcepts$fullName[1]
-        fullConceptNames <- gsub(paste(study.name,"\\\\.*", sep = ""),paste(study.name, "\\\\", sep = ""), 
+        fullConceptNames <- gsub(paste0(study.name,"\\\\.*"), paste0(study.name, "\\\\"), 
                                  tmpConceptPath, ignore.case=T)
-      }else{ 
-        fullConceptNames<-studyConcepts$fullName[match(concept.links, studyConcepts$api.link.self.href)]
+      } else { 
+        fullConceptNames <- studyConcepts$fullName[match(concept.links, studyConcepts$api.link.self.href)]
         }
       for (oneName in fullConceptNames) {
         serverResult <- .transmartGetJSON(

@@ -80,7 +80,7 @@ createPatientSet <- function(study.name, patientset.constraints, returnXMLquery 
             stop("Incorrect input for patient set constraints. Found multiple strings for defining the patient set constraints. 
 					 The patient set constraints should be supplied in one single expression (or string).")}
         
-        try({patientsetConstraintsParsed <- parse(text = patientsetConstraints)[[1]]
+        result <- try({patientsetConstraintsParsed <- parse(text = patientsetConstraints)[[1]]
              if(length(patientsetConstraintsParsed) == 1){
                  if(is.character(patientsetConstraintsParsed)){ #e.g. happens if input string is "\"age\""
                      patientsetConstraints <- patientsetConstraintsParsed
@@ -95,6 +95,14 @@ createPatientSet <- function(study.name, patientset.constraints, returnXMLquery 
              }
         }, silent = T
         )
+        if(class(result) == "try-error"){
+          errorText <- paste("Detected a string as input for patient set constraints.  Have tried to parse the",
+                             "constraints out of the string to convert it into an expression, but the attempt to", 
+                             "parse the constraints out of the string failed:\n\n",
+                             result[1], "\nPlease check the format of your input.",
+                             "Type ?createPatientSet for more details on the expected format.")
+          stop(errorText)
+        }
     }
     return(patientsetConstraints)
 }

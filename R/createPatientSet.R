@@ -76,7 +76,7 @@ createPatientSet <- function(study.name, patientset.constraints, returnXMLquery 
 .checkPatientSetConstraints <- function(patientsetConstraints){
     #test if it is expression and not a string. If string: try to parse
     if(!is.character(patientsetConstraints)) {
-    	return(patientsetConstraints)
+        return(patientsetConstraints)
     }
     if(length(patientsetConstraints) > 1){
         stop("Incorrect input for patient set constraints. Found multiple strings for defining the patient set constraints. 
@@ -85,7 +85,7 @@ createPatientSet <- function(study.name, patientset.constraints, returnXMLquery 
 	# TODO: is deze try nodig?
     result <- try({patientsetConstraintsParsed <- parse(text = patientsetConstraints)[[1]]
          if(length(patientsetConstraintsParsed) == 1 && is.character(patientsetConstraintsParsed)) {
-         	#e.g. happens if input string is "\"age\""
+            #e.g. happens if input string is "\"age\""
              patientsetConstraints <- patientsetConstraintsParsed
          }
          if(length(patientsetConstraintsParsed) > 1) {
@@ -139,11 +139,11 @@ createPatientSet <- function(study.name, patientset.constraints, returnXMLquery 
     
     if( any(! conceptTypes %in% c("CATEGORICAL_OPTION", "NUMERIC", "UNKNOWN", "HIGH_DIMENSIONAL"))){
         warning("Unexpected concept type for one or more concepts in the selected study.
-				Determination which concepts are end-leaves of the tree might not work correcty in all cases. 
-				This only affects the patient selection query if concepts with undetermined type are included in the query. 
-				In that case this message is followed by an accompanying error.
-				You can help fix it by contacting us. Type ?transmartRClient for contact details.
-				\n")
+                Determination which concepts are end-leaves of the tree might not work correcty in all cases. 
+                This only affects the patient selection query if concepts with undetermined type are included in the query. 
+                In that case this message is followed by an accompanying error.
+                You can help fix it by contacting us. Type ?transmartRClient for contact details.
+                \n")
     }
     
     # concepts with type numeric and high_dimensional are end-leaves, 
@@ -401,7 +401,7 @@ createPatientSet <- function(study.name, patientset.constraints, returnXMLquery 
         }else{parsedXML <- paste(parsedXML, " )", sep = "") }
     }
     if(parsedXML == ""){warning("Something went wrong with making a human readable version of the XML. 
-															This does not affect the formation of the patient set")}
+                                                            This does not affect the formation of the patient set")}
     return(parsedXML)
 }
 
@@ -605,12 +605,12 @@ createPatientSet <- function(study.name, patientset.constraints, returnXMLquery 
 # concept name, or as a partial/full concept path or link
 .getConstraintConcept <- function(concept, subconstraint, studyConcepts, identical.match = F, testIfEndLeave = T){
     info <- "Correct way to supply a concept (as part of a (sub)constraint) is:
-	either directly as a string, containing the concept name or path,
-	or indirectly as an object (variable) that contains a string with the concept name or path. 
-	Supplying a concept link as found in the column \'api.link.observations.href\' of the data.frame retrieved by 
-	getConcepts() should also work.
-	Example: if you want to select patients younger than 12, supply \"age\" directly as as string: \"age\" < 12  
-	or indirectly: concepts[2] < 12, where concepts[2] contains the string \"age\"."
+    either directly as a string, containing the concept name or path,
+    or indirectly as an object (variable) that contains a string with the concept name or path. 
+    Supplying a concept link as found in the column \'api.link.observations.href\' of the data.frame retrieved by 
+    getConcepts() should also work.
+    Example: if you want to select patients younger than 12, supply \"age\" directly as as string: \"age\" < 12  
+    or indirectly: concepts[2] < 12, where concepts[2] contains the string \"age\"."
     
     subconstraint <- .expressionToText(subconstraint)
     

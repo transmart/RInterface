@@ -46,7 +46,7 @@ createPatientSet <- function(study.name, patientset.constraints, returnXMLquery 
     # paths.
     studyConcepts <- getConcepts(study.name)
     studyConcepts <- studyConcepts[, c("name", "fullName", "type", "api.link.self.href")]
-    studyConcepts <- .findEndLeaves(studyConcepts)  
+    studyConcepts <- .findEndLeaves(studyConcepts)
     
     # read the constraints given by the user, and convert this to a XML query definition in the format as expected by REST-API
     xmlQuery <- .buildXMLquery(patientset.constraints, studyConcepts, study.name)
@@ -75,27 +75,27 @@ createPatientSet <- function(study.name, patientset.constraints, returnXMLquery 
 
 .checkPatientSetConstraints <- function(patientsetConstraints){
     #test if it is expression and not a string. If string: try to parse
-    if(is.character(patientsetConstraints)){
-        if(length(patientsetConstraints) > 1){
-            stop("Incorrect input for patient set constraints. Found multiple strings for defining the patient set constraints. 
-					 The patient set constraints should be supplied in one single expression (or string).")}
-        
-        try({patientsetConstraintsParsed <- parse(text = patientsetConstraints)[[1]]
-             if(length(patientsetConstraintsParsed) == 1){
-                 if(is.character(patientsetConstraintsParsed)){ #e.g. happens if input string is "\"age\""
-                     patientsetConstraints <- patientsetConstraintsParsed
-                 }
-             }
-             if(length(patientsetConstraintsParsed) > 1){
-                 message(paste("\nDetecting a string as input for patient set constraints - expected is an expression,",  
-                               "such as: \"age\" > 65.",
-                               "\nWill attempt to parse the constraints out of the string, converting it",
-                               "into an expression..."))
-                 patientsetConstraints <- patientsetConstraintsParsed
-             }
-        }, silent = T
-        )
+    if(!is.character(patientsetConstraints)) {
+    	return(patientsetConstraints)
     }
+    if(length(patientsetConstraints) > 1){
+        stop("Incorrect input for patient set constraints. Found multiple strings for defining the patient set constraints. 
+				 The patient set constraints should be supplied in one single expression (or string).")}
+    
+	# TODO: is deze try nodig?
+    try({patientsetConstraintsParsed <- parse(text = patientsetConstraints)[[1]]
+         if(length(patientsetConstraintsParsed) == 1 && is.character(patientsetConstraintsParsed)) {
+         	#e.g. happens if input string is "\"age\""
+             patientsetConstraints <- patientsetConstraintsParsed
+         }
+         if(length(patientsetConstraintsParsed) > 1) {
+             message(paste("\nDetecting a string as input for patient set constraints - expected is an expression,",  
+                           "such as: \"age\" > 65.",
+                           "\nWill attempt to parse the constraints out of the string, converting it",
+                           "into an expression..."))
+             patientsetConstraints <- patientsetConstraintsParsed
+         }
+    }, silent = T)
     return(patientsetConstraints)
 }
 
@@ -140,10 +140,10 @@ createPatientSet <- function(study.name, patientset.constraints, returnXMLquery 
     
     # concepts with type numeric and high_dimensional are end-leaves, 
     # concepts with type categorical_options are not end-leaves
-    endLeaf <- ""
+    endLeaf <- logical()
     conceptListStudy <- cbind(conceptListStudy, endLeaf, stringsAsFactors = F)
-    conceptListStudy$endLeaf[conceptListStudy$type %in% c("NUMERIC", "HIGH_DIMENSIONAL")] <- "YES"
-    conceptListStudy$endLeaf[conceptListStudy$type == "CATEGORICAL_OPTION"] <- "NO"
+    conceptListStudy$endLeaf[conceptListStudy$type %in% c("NUMERIC", "HIGH_DIMENSIONAL")] <- T
+    conceptListStudy$endLeaf[conceptListStudy$type == "CATEGORICAL_OPTION"] <- F
     
     #find categorical data nodes, and set type of categorical end-leave (data node) to "CATEGORICAL_NODE"
     # concepts with 'type' categorical_option are the concept values. Take the concept path of the concept values and 
@@ -153,9 +153,9 @@ createPatientSet <- function(study.name, patientset.constraints, returnXMLquery 
     # containing the categorical value, to obtain path to categorical node
     categoricalNodes <- unique(categoricalNodes)
     
-    conceptListStudy$endLeaf[conceptListStudy$type == "UNKNOWN" & conceptListStudy$fullName %in% categoricalNodes] <- "YES"
+    conceptListStudy$endLeaf[conceptListStudy$type == "UNKNOWN" & conceptListStudy$fullName %in% categoricalNodes] <- T
     conceptListStudy$type[conceptListStudy$type == "UNKNOWN" & conceptListStudy$fullName %in% categoricalNodes] <- "CATEGORICAL_NODE"
-    conceptListStudy$endLeaf[conceptListStudy$type == "UNKNOWN" & !conceptListStudy$fullName %in% categoricalNodes] <- "NO"
+    conceptListStudy$endLeaf[conceptListStudy$type == "UNKNOWN" & !conceptListStudy$fullName %in% categoricalNodes] <- F
     
     return(conceptListStudy)
 }  
@@ -352,46 +352,45 @@ createPatientSet <- function(study.name, patientset.constraints, returnXMLquery 
     
     parsedXML <- ""
     
-    if(all(names(xmlQuery)== "panel")){
-        panels <- xmlChildren(xmlQuery)
+    # TODO: this test is not really needed
+    panels <- xmlChildren(xmlQuery)
+    
+    for(i in 1:length(panels)){
+        panel <- panels[[i]]
         
-        for(i in 1:length(panels)){
-            panel <- panels[[i]]
+        if(i == 1){parsedXML <- paste(parsedXML, "( ", sep = "") #first panel
+        }else{parsedXML <- paste(parsedXML, "\n\n\t&\n\n( ", sep = "")}
+        
+        invert <- xmlValue(panel[["invert"]])
+        if(invert == "1"){parsedXML <- paste(parsedXML, "!( ", sep = "") }
+        
+        #add the children
+        items <- xmlElementsByTagName(panel, "item")
+        for(j in 1:length(items)){
+            item <- items[[j]]
+            if(j > 1){parsedXML <- paste(parsedXML, " | ", sep = "")}
             
-            if(i == 1){parsedXML <- paste(parsedXML, "( ", sep = "") #first panel
-            }else{parsedXML <- paste(parsedXML, "\n\n\t&\n\n( ", sep = "")}
+            #get concept path
+            item_key <- xmlValue(item[["item_key"]])
+            concept_path <- gsub("\\\\\\\\Public Studies", "", item_key)
+            concept_path <- gsub("\\\\\\\\Private Studies", "", concept_path)
+            parsedXML <- paste(parsedXML, "\"", concept_path, "\"", sep = "") 
             
-            invert <- xmlValue(panel[["invert"]])
-            if(invert == "1"){parsedXML <- paste(parsedXML, "!( ", sep = "") }
-            
-            #add the children
-            items <- xmlElementsByTagName(panel, "item")
-            for(j in 1:length(items)){
-                item <- items[[j]]
-                if(j > 1){parsedXML <- paste(parsedXML, " | ", sep = "")}
+            #if constraint operator and constraint value are given, get these
+            childNames <- names(item)
+            if("constrain_by_value" %in% childNames){
+                valueConstraints <- item[["constrain_by_value"]]
+                valueOperator <- xmlValue(valueConstraints[["value_operator"]])
+                parsedXML <- paste(parsedXML, " ", valueOperator, " ", sep = "") 
+                valueConstraint <- xmlValue(valueConstraints[["value_constraint"]])
+                parsedXML <- paste(parsedXML, " ", valueConstraint, " ", sep = "") 
                 
-                #get concept path
-                item_key <- xmlValue(item[["item_key"]])
-                concept_path <- gsub("\\\\\\\\Public Studies", "", item_key)
-                concept_path <- gsub("\\\\\\\\Private Studies", "", concept_path)
-                parsedXML <- paste(parsedXML, "\"", concept_path, "\"", sep = "") 
-                
-                #if constraint operator and constraint value are given, get these
-                childNames <- names(item)
-                if("constrain_by_value" %in% childNames){
-                    valueConstraints <- item[["constrain_by_value"]]
-                    valueOperator <- xmlValue(valueConstraints[["value_operator"]])
-                    parsedXML <- paste(parsedXML, " ", valueOperator, " ", sep = "") 
-                    valueConstraint <- xmlValue(valueConstraints[["value_constraint"]])
-                    parsedXML <- paste(parsedXML, " ", valueConstraint, " ", sep = "") 
-                    
-                }
             }
-            
-            #close brackets for panel
-            if(invert == "1"){parsedXML <- paste(parsedXML, " ))", sep = "") 
-            }else{parsedXML <- paste(parsedXML, " )", sep = "") }
         }
+        
+        #close brackets for panel
+        if(invert == "1"){parsedXML <- paste(parsedXML, " ))", sep = "") 
+        }else{parsedXML <- paste(parsedXML, " )", sep = "") }
     }
     if(parsedXML == ""){warning("Something went wrong with making a human readable version of the XML. 
 															This does not affect the formation of the patient set")}
@@ -407,7 +406,7 @@ createPatientSet <- function(study.name, patientset.constraints, returnXMLquery 
     splitPath <- strsplit(conceptPath, "\\\\")[[1]] 
     nameHit <- grep(study.name, splitPath, ignore.case = T)[1] # take the first, just in case the study.name is repeated 
     # in later part of path
-    studyPath <- paste(c(splitPath[1:nameHit], ""), collapse = "\\", sep = "")
+    studyPath <- paste0(c(splitPath[1:nameHit], ""), collapse = "\\")
     itemKey <- .makeItemKey(studyPath)
     
     panel <- xmlNode("panel", 
@@ -426,8 +425,7 @@ createPatientSet <- function(study.name, patientset.constraints, returnXMLquery 
     for(i in 1:length(itemXMLtreeList)){
         panel<- append.XMLNode(panel, itemXMLtreeList[[i]])
     }
-    panel <- list(panel)
-    return(panel)
+    return(list(panel))
 }
 
 # constraint is of format: {concept definition}{relational operator}{constraint_value}, e.g. "age" < 12.
@@ -561,11 +559,12 @@ createPatientSet <- function(study.name, patientset.constraints, returnXMLquery 
 #       <item_key>\\Public Studies\Public Studies\Cell-line\Demographics\Age\</item_key>
 #       <item_key>\\Private Studies\Private Studies\Cell-line\Characteristics\Age\</item_key>
 .makeItemKey <- function(conceptPath){
-    dimension <- strsplit(conceptPath, "\\\\")[[1]][2] #get first part of the concept path, that is either public or private study
+    dimension <- strsplit(conceptPath, "\\", fixed=T)[[1]][2] #get first part of the concept path, that is either public or private study
     
-    if(!dimension %in% c("Public Studies", "Private Studies")){
-        stop("Could not determine the dimension for the item_key, that is used for the XML query")}
-    item_key <- paste("\\\\", dimension, conceptPath, sep = "")
+    # TODO: is dit nodig?
+    #if(!dimension %in% c("Public Studies", "Private Studies")){
+    #    stop("Could not determine the dimension for the item_key, that is used for the XML query")}
+    item_key <- paste0("\\\\", dimension, conceptPath)
     return(item_key)
 }
 
@@ -702,9 +701,7 @@ createPatientSet <- function(study.name, patientset.constraints, returnXMLquery 
     # (ie. data node), either categorical or numerical, and if it's categorical it should be an end leave and not a 
     # categorical value. If only a concept is supplied as a constraint, it is possible to also use other concepts that 
     # are not end leaves, and high dimensional data nodes - in that case testIfEndLeave should be FALSE.
-    is.endLeaf <- studyConcepts$endLeaf[conceptMatch] == "YES"
-    
-    if(!is.endLeaf & testIfEndLeave){
+    if(!studyConcepts$endLeaf[[conceptMatch]] & testIfEndLeave){
         stop(paste("The supplied concept \'", concept, "\' is not a data node (ie. not an end leaf of the transmart tree).",
                    "The supplied concept name/path/link must point to a single numerical or categorical",
                    " data node (end leaf).", sep =  ""))

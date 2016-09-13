@@ -23,8 +23,10 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 # concepts table for GSE8581
-gse8581conceptsLocation <- 
-  system.file("unittests/resources/gse8581concepts.txt", package="transmartRClient")
+self.location <- dirname(sys.frame(1)$ofile)
+gse8581conceptsLocation <- paste0(self.location, "/resources/gse8581concepts.txt")
+#  system.file("unittests/resources/gse8581concepts.txt", package="transmartRClient")
+#gse8581conceptsLocation <- "/home/jan/devel/transmart/RInterface/inst/unittests/resources/gse8581concepts.txt"
 
 gseconcepts <- read.table(gse8581conceptsLocation, header = T, stringsAsFactors = F, sep = "\t")
 

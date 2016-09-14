@@ -25,6 +25,9 @@
 library('RUnit')
 require("transmartRClient")
 
+# If you want to run these tests in development on a not installed version of this package, do:
+# TRANSMART_RINTERFACE_PKG_ROOT <- "/path/to/transmart/RInterface"
+
 unittestsLocation <- system.file("unittests", package="transmartRClient")
 
 test.suite <- defineTestSuite("highdimTests",

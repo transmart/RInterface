@@ -22,22 +22,17 @@
 # You should have received a copy of the GNU General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-script.dirname <- function() {
-    for (i in 0:-sys.nframe()) {
-        path <- sys.frame(i)$ofile
-        #message(paste0(i, ": ", path))
-        if(!is.null(path)) return(dirname(path))
-    }
-    stop("Directory name of running script not found")
-}
-self.location <- script.dirname()
-#message(paste0("location: ", self.location))
 
 # concepts table for GSE8581
-self.location <- dirname(sys.frame(1)$ofile)
-gse8581conceptsLocation <- paste0(self.location, "/resources/gse8581concepts.txt")
-#  system.file("unittests/resources/gse8581concepts.txt", package="transmartRClient")
-#gse8581conceptsLocation <- "/home/jan/devel/transmart/RInterface/inst/unittests/resources/gse8581concepts.txt"
+gse8581conceptsLocation <- 
+    if (exists("TRANSMART_RINTERFACE_PKG_ROOT")) {
+        # Development setting
+        message(paste0("Loading unit tests from ", TRANSMART_RINTERFACE_PKG_ROOT))
+        paste0(TRANSMART_RINTERFACE_PKG_ROOT, "/inst/unittests/resources/gse8581concepts.txt")
+    } else {
+        # Assume the package is installed
+        system.file("unittests/resources/gse8581concepts.txt", package="transmartRClient")
+    }
 
 gseconcepts <- read.table(gse8581conceptsLocation, header = T, stringsAsFactors = F, sep = "\t")
 

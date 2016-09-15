@@ -81,21 +81,8 @@ createPatientSet <- function(study.name, patientset.constraints, returnXMLquery 
         stop("Incorrect input for patient set constraints. Found multiple strings for defining the patient set constraints. 
               The patient set constraints should be supplied in one single expression (or string).")}
 
-    result <- try({
-        patientsetConstraintsParsed <- parse(text = patientsetConstraints)[[1]]
-        if(length(patientsetConstraintsParsed) == 1 && is.character(patientsetConstraintsParsed)) {
-            #e.g. happens if input string is "\"age\""
-            patientsetConstraints <- patientsetConstraintsParsed
-        }
-        if(length(patientsetConstraintsParsed) > 1) {
-            .message(paste("\nDetecting a string as input for patient set constraints - expected is an expression,",
-                           "such as: \"age\" > 65.",
-                           "\nWill attempt to parse the constraints out of the string, converting it",
-                           "into an expression..."))
-            patientsetConstraints <- patientsetConstraintsParsed
-        }
-    }, silent = T)
-    
+    patientsetConstraintsParsed <- NA
+    result <- try({ patientsetConstraintsParsed <- parse(text = patientsetConstraints)[[1]] }, silent = T)
     if(class(result) == "try-error") {
         stop(paste("Detected a string as input for patient set constraints.  Have tried to parse the",
                    "constraints out of the string to convert it into an expression, but the attempt to",
@@ -104,6 +91,19 @@ createPatientSet <- function(study.name, patientset.constraints, returnXMLquery 
                    "Type ?createPatientSet for more details on the expected format."))
     }
     
+    if(length(patientsetConstraintsParsed) == 1 && is.character(patientsetConstraintsParsed)) {
+        #e.g. happens if input string is "\"age\""
+        return(patientsetConstraintsParsed)
+    }
+    if(length(patientsetConstraintsParsed) > 1) {
+        .message(paste("\nDetecting a string as input for patient set constraints - expected is an expression,",
+                       "such as: \"age\" > 65.",
+                       "\nWill attempt to parse the constraints out of the string, converting it",
+                       "into an expression..."))
+        return(patientsetConstraintsParsed)
+    }
+    
+    # if the input is already a concept name, e.g. "age"
     return(patientsetConstraints)
 }
 
@@ -177,11 +177,10 @@ createPatientSet <- function(study.name, patientset.constraints, returnXMLquery 
     logicalOperators <- c("&","&&", "|", "||")
     allowedOperators <- c(relationalOperators, logicalOperators)
     
-    verbose <- getOption("verbose")
     # construct a message that's used later on, when an error occurs. This message includes a listing of the different  
-    # elements (sub units) of the constraint expression, if verbose == T 
+    # elements (sub units) of the constraint expression, if option "verbose" is set. 
     elementsMsg <- ""
-    if(verbose) {
+    if(getOption("verbose")) {
         subUnits <- ""
         for(i in 1:length(patientsetConstraints)) {
             subUnits <- paste(subUnits, paste("\n\tElement ", i,": ", .expressionToText(patientsetConstraints[[i]]), sep = ""))
@@ -205,7 +204,7 @@ createPatientSet <- function(study.name, patientset.constraints, returnXMLquery 
         firstElement_in_allowedOperators <- F
     } else {
         firstElement <-  as.character(patientsetConstraints[[1]])
-        firstElement_in_allowedOperators <- firstElement%in% allowedOperators
+        firstElement_in_allowedOperators <- firstElement %in% allowedOperators
     }
     
     if(length(patientsetConstraints) == 3 & firstElement_in_allowedOperators) {

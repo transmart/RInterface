@@ -30,7 +30,7 @@ require("transmartRClient")
 
 unittestsLocation <- system.file("unittests", package="transmartRClient")
 
-test.suite <- defineTestSuite("highdimTests",
+test.suite <- defineTestSuite("RInterface tests",
                               dirs = unittestsLocation,
                               testFileRegexp = "^runit.+\\.[rR]$")
 

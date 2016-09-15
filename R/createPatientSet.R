@@ -21,15 +21,14 @@
 # You should have received a copy of the GNU General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-
 # Retrieve patient.set ID from tranSMART database, based on the constraints given by the user.
 # Patient.set constraints are provided as an expression in the shape of, for example,
 # (c1 | c2) & (c3|c4|c5) & c6 &... where c is either a constraint built up as {concept}{operator}{constraint_value} 
 # (e.g. "age" < 60) or a reference to a concept (e.g. "age")
 createPatientSet <- function(study.name, patientset.constraints, returnXMLquery = F){
-    if(missing(study.name)){stop("Provide study name")}
-    if(missing(patientset.constraints)){stop("Provide patientset.constraints")}
-    message("\nProcessing input...", "")
+    if(missing(study.name)) { stop("Provide study name") }
+    if(missing(patientset.constraints)) { stop("Provide patientset.constraints") }
+    .message("\nProcessing input...", "")
     
     # retrieve the expression that defines the constraints
     patientset.constraints <- substitute(patientset.constraints) #needs to be like this, with possible later evaluation 
@@ -52,10 +51,10 @@ createPatientSet <- function(study.name, patientset.constraints, returnXMLquery 
     xmlQuery <- .buildXMLquery(patientset.constraints, studyConcepts, study.name)
     hrConstraints <- .makeSummaryOfQuery(xmlQuery)
     xmlQuery <- saveXML(xmlQuery, prefix = '<?xml version="1.0" encoding="UTF-8"?>\n') #convert XML tree to string
-    if(getOption("verbose")) { message(xmlQuery) }
+    .message(xmlQuery)
     
     # do POST request, and store result
-    message("\nCreating patient set...", "")
+    .message("\nCreating patient set...", "")
     serverResult <- .transmartGetJSON("/patient_sets", post.body = xmlQuery,
                                       post.content.type ="text/xml;charset=UTF-8", onlyContent = c(201))
     
@@ -66,7 +65,7 @@ createPatientSet <- function(study.name, patientset.constraints, returnXMLquery 
                    input_patientset.constraints = .expressionToText(patientset.constraints), 
                    finalQueryConstraints = hrConstraints)
     
-    message(paste("\nBased on the input, the following constraints were defined and sent to the server", 
+    .message(paste("\nBased on the input, the following constraints were defined and sent to the server", 
                   " (always includes study concept):\n", result$finalQueryConstraints, sep = ""), "")
     if(returnXMLquery){result[["xmlQuery"]] <- xmlQuery}
     return(result)
@@ -89,7 +88,7 @@ createPatientSet <- function(study.name, patientset.constraints, returnXMLquery 
              patientsetConstraints <- patientsetConstraintsParsed
          }
          if(length(patientsetConstraintsParsed) > 1) {
-             message(paste("\nDetecting a string as input for patient set constraints - expected is an expression,",  
+             .message(paste("\nDetecting a string as input for patient set constraints - expected is an expression,",  
                            "such as: \"age\" > 65.",
                            "\nWill attempt to parse the constraints out of the string, converting it",
                            "into an expression..."))
@@ -449,13 +448,15 @@ createPatientSet <- function(study.name, patientset.constraints, returnXMLquery 
         tmpValue <- try(eval(constraint$value, envir = globalenv()), silent = T)
         if(class(tmpValue) == "try-error"){
             try_error <- attr(tmpValue, "condition")$message
-            err_message <- paste(try_error, ". Object was specified in (sub)constraint ", 
-                                 .expressionToText(patientsetConstraints) , ".\n", sep = "")
+            err_message <- paste0(try_error, ". Object was specified in (sub)constraint ", 
+                                 .expressionToText(patientsetConstraints) , ".\n")
             stop(err_message)
         }
         if(length(tmpValue) >1){
-            message("\nInput for constraint_value: ")
-            print(tmpValue)
+            if(getOption("verbose")) {
+                message("\nInput for constraint_value: ")
+                print(tmpValue)
+            }
             stop(paste("Incorrect input for constraint_value in (sub)constraint: ", .expressionToText(patientsetConstraints), 
                        ".\nObject length of \'", constraint$value , "\' is larger than 1.", 
                        "Only a single input value (string/number) is allowed as a constraint_value."))
@@ -619,7 +620,7 @@ createPatientSet <- function(study.name, patientset.constraints, returnXMLquery 
         result <- try(eval(concept, envir = globalenv()), silent = T)
         if(class(result) == "try-error"){
             try_error <- attr(result, "condition")$message
-            err_message <- paste(try_error,  ". Object was specified in subconstraint ", subconstraint, ".\n", info, sep = "")
+            err_message <- paste0(try_error,  ". Object was specified in subconstraint ", subconstraint, ".\n", info)
             stop(err_message)
         }
         if(length(result) >1){
@@ -683,7 +684,7 @@ createPatientSet <- function(study.name, patientset.constraints, returnXMLquery 
         }
         
         if(is.concept.link){
-            message("\nDetecting a concept.link. Will attempt to find matching concept path.")
+            .message("\nDetecting a concept.link. Will attempt to find matching concept path.")
             conceptMatch <- grep(concept, studyConcepts$api.link.self.href) 
             if(length(conceptMatch) > 1){
                 conceptMatch <- .selectMatch(concept = concept, matching_indices = conceptMatch, 
@@ -717,7 +718,7 @@ createPatientSet <- function(study.name, patientset.constraints, returnXMLquery 
     
     matched_concept = list(conceptPath = studyConcepts$fullName[conceptMatch], 
                            conceptType = studyConcepts$type[conceptMatch])
-    message(paste("\nMatched the concept \'", orig_concept, "\' in subconstraint \'", subconstraint,
+    .message(paste("\nMatched the concept \'", orig_concept, "\' in subconstraint \'", subconstraint,
                   "\'\n  to concept (full path): \'", matched_concept$conceptPath, "\'\n", sep = "") )
     return(matched_concept)
 }

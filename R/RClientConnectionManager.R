@@ -22,6 +22,10 @@
 # You should have received a copy of the GNU General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
+.message <- function(msg) {
+    if(getOption("verbose")) message(msg)
+}
+
 connectToTransmart <- 
 function (transmartDomain, use.authentication = TRUE, token = NULL, .access.token = NULL, ...) {
     if (!exists("transmartClientEnv") || transmartClientEnv$transmartDomain != transmartDomain) { 
@@ -171,7 +175,7 @@ function (oauthDomain = transmartClientEnv$transmartDomain, prefetched.request.t
             # Maybe we're talking to an older version of Transmart that uses the version 1 oauth plugin
             ping <- .transmartServerGetRequest("/oauth/verify", accept.type = "default", onlyContent = F)
         }
-        if (getOption("verbose")) { message(paste(ping$content, collapse = ": ")) }
+        .message(paste(ping$content, collapse = ": "))
 
         if(ping$status == 200) { return(TRUE) }
 

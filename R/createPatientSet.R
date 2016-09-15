@@ -148,12 +148,12 @@ createPatientSet <- function(study.name, patientset.constraints, returnXMLquery 
     
     # concepts with type numeric and high_dimensional are end-leaves, 
     # concepts with type categorical_options are not end-leaves
-    endLeaf <- logical()
+    endLeaf <- NA
     conceptListStudy <- cbind(conceptListStudy, endLeaf, stringsAsFactors = F)
     conceptListStudy$endLeaf[conceptListStudy$type %in% c("NUMERIC", "HIGH_DIMENSIONAL")] <- T
     conceptListStudy$endLeaf[conceptListStudy$type == "CATEGORICAL_OPTION"] <- F
     
-    #find categorical data nodes, and set type of categorical end-leave (data node) to "CATEGORICAL_NODE"
+    # find categorical data nodes, and set type of categorical end-leave (data node) to "CATEGORICAL_NODE"
     # concepts with 'type' categorical_option are the concept values. Take the concept path of the concept values and 
     # remove the last part to retrieve a list of concept paths for categorical nodes.
     categoricalOptionsPaths <- conceptListStudy$fullName[conceptListStudy$type == "CATEGORICAL_OPTION"]
